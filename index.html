@@ -893,7 +893,7 @@ function render(){
       <div class="th-score"><div class="th-num">${total}</div><div class="th-unit">综合分</div></div>
       <div class="th-main">
         <div class="th-verdict ${vClass}">${verdict}</div>
-        <div class="th-date">${todayStr} · ${sign}座${hasBirth?' · 八字 '+eightChar:' · 农历 '+lunarStr}</div>
+        <div class="th-date">${todayStr} · ${sign}座${hasBirth?' · 八字 '+colorBaziMini(eightChar):' · 农历 '+lunarStr}</div>
       </div>
     </div>
     <div class="th-plain">${plain}</div>
@@ -1108,6 +1108,17 @@ function colorBazi(str){
     const zc = WUXING_TEXT[ZHI[z]] || 'var(--ink)';
     return `<span class="pillar"><span class="pl">${labels[i]||''}</span><b style="color:${gc}">${escHtml(g)}</b><b style="color:${zc};margin-left:1px">${escHtml(z)}</b></span>`;
   }).join('');
+}
+function colorBaziMini(str){
+  if(!str) return '';
+  const s = str.replace(/\s+/g,''); // 去空格
+  const parts = s.match(/.{1,2}/g) || [];
+  return parts.map(p=>{
+    const g=p.charAt(0), z=p.charAt(1)||'';
+    const gc=WUXING_TEXT[GAN[g]]||'var(--ink)';
+    const zc=z&&WUXING_TEXT[ZHI[z]]?WUXING_TEXT[ZHI[z]]:'var(--ink)';
+    return `<b style="color:${gc}">${escHtml(g)}</b><b style="color:${zc}">${escHtml(z)}</b>`;
+  }).join(' ');
 }
 /* 干支（无标签行内）配色：用于「大运」等单组干支，按天干/地支五行属性上色 */
 function colorGZ(gz){
