@@ -143,8 +143,9 @@
   .astro-item{font-size:12.5px;padding:8px 11px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;line-height:1.6}
   .astro-item b{color:var(--accent)}
   .aspect-line{font-size:12px;color:var(--ink-2);line-height:1.9}
-  .yw{cursor:pointer;color:var(--accent);border-bottom:1px dashed color-mix(in srgb,var(--accent) 60%,transparent);padding:0 1px;white-space:nowrap;transition:background .15s ease}
+  .yw{cursor:pointer;color:var(--accent);border-bottom:1px dashed color-mix(in srgb,var(--accent) 60%,transparent);padding:2px 3px;white-space:nowrap;transition:background .15s ease;touch-action:manipulation}
   .yw:hover{background:var(--accent-soft);border-radius:4px}
+  .yw:active{background:var(--accent-soft);border-radius:4px}
   .word-tip{position:fixed;z-index:999;background:var(--card);border:1px solid var(--line-2);border-radius:14px;padding:11px 15px;font-size:12.5px;color:var(--ink-2);box-shadow:0 8px 30px rgba(0,0,0,.16);max-width:250px;line-height:1.8;display:none}
   .word-tip b{color:var(--accent);margin-right:6px}
   .plain-text{font-size:14px;line-height:2;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:10px}
@@ -199,6 +200,9 @@
     .astro-grid{grid-template-columns:1fr}
     /* 表单摘要 */
     .form-summary{font-size:13px}
+    /* 关键词 + 弹窗解释：加大触控区、底部居中 */
+    .yw{padding:3px 5px}
+    .word-tip{bottom:80px!important;left:12px!important;right:12px!important;top:auto!important;max-width:calc(100vw - 24px)!important;font-size:13px}
   }
 
   /* ============ 今日一屏摘要（首屏极简卡） ============ */
@@ -1100,6 +1104,7 @@ function colorGZ(gz){
 }
 function showWordTip(e, arg){
   e.stopPropagation();
+  e.preventDefault();
   const tip = document.getElementById('wordTip');
   let w = '';
   if(typeof arg === 'string'){ w = arg; }
@@ -1109,9 +1114,21 @@ function showWordTip(e, arg){
   if(!d && D.CHENG_GU && D.CHENG_GU.poems[w]) d = '袁天罡称骨批语：<br>' + D.CHENG_GU.poems[w];
   tip.innerHTML = `<b>${escHtml(w)}</b>${d || '黄历/占星传统用词，暂无可查释义，可按字面理解'}`;
   tip.style.display = 'block';
-  const x = Math.min(e.clientX, window.innerWidth - 260);
-  const y = Math.min(e.clientY + 20, window.innerHeight - 90);
-  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  // 手机上用触摸坐标，桌面用鼠标坐标
+  const cx = (e.touches && e.touches[0] ? e.touches[0].clientX : e.changedTouches ? e.changedTouches[0].clientX : e.clientX) || 0;
+  const cy = (e.touches && e.touches[0] ? e.touches[0].clientY : e.changedTouches ? e.changedTouches[0].clientY : e.clientY) || 0;
+  const iw = window.innerWidth, ih = window.innerHeight;
+  // 窄屏（手机）居中显示；宽屏跟随触摸/鼠标位置
+  if(iw < 480){
+    tip.style.left = '12px'; tip.style.right = '12px'; tip.style.top = 'auto'; tip.style.bottom = '80px';
+    tip.style.maxWidth = 'calc(100vw - 24px)';
+  } else {
+    const x = Math.min(Math.max(cx, 10), iw - 260);
+    const y = Math.min(cy + 22, ih - 90);
+    tip.style.left = x+'px'; tip.style.top = y+'px';
+    tip.style.right = 'auto'; tip.style.bottom = 'auto';
+    tip.style.maxWidth = '250px';
+  }
 }
 
 /* ================= 袁天罡称骨 ================= */
