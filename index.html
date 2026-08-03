@@ -252,6 +252,15 @@
   .tab-btn .ic{margin-right:5px}
   .hero-btn .ic{margin-right:7px;vertical-align:-4px}
   .form-summary .ic{margin-right:7px}
+  /* ============ 版本更新提示 ============ */
+  .update-banner{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:100;
+    background:var(--card);border:2px solid var(--accent);border-radius:999px;padding:9px 20px 9px 14px;
+    font-size:13px;box-shadow:0 4px 24px rgba(0,0,0,.15);display:flex;align-items:center;gap:8px;
+    animation:fadeUp .4s var(--ease) both;white-space:nowrap}
+  .update-banner.hidden{display:none}
+  .update-banner .ic{width:16px;height:16px;margin:0;color:var(--accent)}
+  .update-banner a{color:var(--accent);font-weight:700;text-decoration:none;cursor:pointer;margin-left:2px}
+  .update-banner a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
@@ -338,6 +347,11 @@
   数据：lunar-javascript（6tail）+ celestine（NASA/瑞士星历验证）+ data.js（可喂资料更新）<br>
   融合：黄历40% + 八字用神30% + 星座20% + 大运10% · 周易为梅花易数时间起卦<br>
   <b style="color:var(--accent)">本工具仅供娱乐参考，所有结果由算法生成，不构成任何专业建议；你填写的出生信息仅存于本地浏览器，不会上传。</b>
+</div>
+
+<!-- 版本更新提示（检测到服务器版本更新时显示） -->
+<div class="update-banner hidden" id="updateBanner">
+  <span class="ic" id="updateIcon"></span><span>新版本 <b id="updateVerText"></b> 已上线</span><a href="javascript:location.reload()">刷新更新 →</a>
 </div>
 
 </main>
@@ -1482,6 +1496,27 @@ function saveBirth(){
 
   // 不自动推算：显示首页 Hero，等用户点【开始】
   // （有存档 → 点「查看今天的推算」自动算今天；无存档 → 进入引导占位）
+
+  // ===== 版本更新检测 =====
+  // 每 10 分钟检测一次服务器上 version.txt，发现新版本就显示刷新提示
+  const CUR_VER = (D.VERSION||'').split(' · ')[0];
+  const upBanner = document.getElementById('updateBanner');
+  const upVerText = document.getElementById('updateVerText');
+  const upIcon = document.getElementById('updateIcon');
+  if(upIcon) upIcon.innerHTML = icon('refresh',16);
+  function checkUpdate(){
+    fetch('version.txt?'+Date.now(), {cache:'no-store'})
+      .then(r => r.ok ? r.text() : Promise.reject())
+      .then(txt => {
+        const v = txt.trim();
+        if(v && v !== CUR_VER && upBanner && upVerText){
+          upVerText.textContent = v;
+          upBanner.classList.remove('hidden');
+        }
+      })
+      .catch(() => {}); // 网络不通：静默，不影响使用
+  }
+  setTimeout(() => { checkUpdate(); setInterval(checkUpdate, 600000); }, 120000);
 })();
 
 /* ========== 首页 ↔ 正文 切换 ========== */
