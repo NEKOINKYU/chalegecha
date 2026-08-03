@@ -73,6 +73,7 @@
   .pillar .pl{font-size:11px;color:var(--sub);font-weight:400;margin-bottom:2px;letter-spacing:0}
   .pillar b{font-weight:700}
   .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .tags .yw-detail{flex-basis:100%}
   .tag{font-size:12px;padding:3px 11px;border-radius:999px;background:var(--surface-2);color:var(--sub)}
   .yi-ji{display:flex;gap:10px;margin-top:8px}
   .yi,.ji{flex:1;border-radius:14px;padding:13px 14px;font-size:13px;line-height:1.9}
@@ -1168,16 +1169,21 @@ function showWordTip(e, arg){
   div.className = 'yw-detail';
   div.innerHTML = '<b>' + escHtml(w) + '</b> ' + (d || '黄历/占星传统用词，暂无可查释义，可按字面理解');
   div.onclick = function(ev){ ev.stopPropagation(); closeWordDetail(el); };
-  el.after(div);
+  // 标签内的词（值神/纳音/冲/喜神/六曜等）展开到整行，不挤在同一条 flex 里
+  var parent = el.parentElement;
+  if(parent && parent.classList.contains('tag')){ parent.after(div); el._ywParent = parent; }
+  else { el.after(div); }
   el.classList.add('yw-open');
   var onScroll = function(){ if(el.classList.contains('yw-open')) closeWordDetail(el); };
   window.addEventListener('scroll', onScroll, {passive:true, once:true});
 }
 function closeWordDetail(el){
   if(!el) return;
-  var nxt = el.nextElementSibling;
+  var parent = el._ywParent || el;
+  var nxt = parent.nextElementSibling;
   if(nxt && nxt.classList.contains('yw-detail')) nxt.remove();
   el.classList.remove('yw-open');
+  el._ywParent = null;
 }
 
 /* ================= 袁天罡称骨 ================= */
