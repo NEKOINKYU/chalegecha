@@ -153,6 +153,50 @@
   .astro-tri b{color:var(--accent)}
   @media(max-width:640px){.fusion-grid{grid-template-columns:1fr}.fusion-side{position:static}}
   @media(max-width:600px){.grid2,.dims{grid-template-columns:1fr}}
+  /* ============ 手机适配（< 480px） ============ */
+  @media(max-width:480px){
+    body{padding:0 12px 40px}
+    /* iOS 防自动放大：输入框字号至少 16px */
+    select,input[type=date],input[type=time],input[type=number]{font-size:16px!important}
+    /* 表单行：竖排，控件撑满 */
+    .input-row{flex-direction:column;align-items:stretch}
+    .input-row select,.input-row input{max-width:100%!important;width:100%}
+    .loc-select{max-width:100%!important}
+    /* Hero 首页 */
+    .hero-title{font-size:clamp(42px,14vw,72px);letter-spacing:3px}
+    .hero-tag{font-size:14px}
+    .hero-btn{width:100%;padding:16px 24px;font-size:17px}
+    .hero-hint{font-size:12px}
+    .intro-inner{padding:0 12px}
+    .peek{font-size:12px;padding:10px 12px}
+    /* 今日一屏摘要卡：分数置顶，内容居下 */
+    .th-top{flex-direction:column;align-items:flex-start;gap:8px}
+    .th-score{align-self:center}
+    .th-num{font-size:36px}
+    /* 八字柱子 */
+    .eight-char{gap:8px 10px}
+    .pillar{font-size:19px}
+    /* 宜忌双栏 */
+    .yi-ji{flex-direction:column}
+    /* Tab：允许横向滚动，字号稍小 */
+    .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;justify-content:flex-start}
+    .tab-btn{font-size:12.5px;padding:8px;min-width:64px;flex:none}
+    /* 卡片内边距缩减 */
+    .card{padding:14px}
+    .card h2{font-size:14px}
+    /* 按钮加大触控区域 */
+    .btn{padding:10px 16px;font-size:14px}
+    .btn-go{font-size:15px}
+    /* 更新提示横幅：自适应宽度 */
+    .update-banner{left:12px;right:12px;transform:none;border-radius:14px;font-size:12px;padding:10px 14px;flex-wrap:wrap;justify-content:center;text-align:center}
+    .update-banner a{white-space:nowrap}
+    /* 卦象展示 */
+    .gua-box{min-width:auto;flex:1}
+    /* 星盘网格 */
+    .astro-grid{grid-template-columns:1fr}
+    /* 表单摘要 */
+    .form-summary{font-size:13px}
+  }
 
   /* ============ 今日一屏摘要（首屏极简卡） ============ */
   .today-hero{background:linear-gradient(160deg,var(--card),var(--card-2));border:1px solid var(--line-2)}
