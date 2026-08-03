@@ -1606,7 +1606,7 @@ function saveBirth(){
   const heroBtn=document.getElementById('heroBtn');
   if(heroBtn) heroBtn.innerHTML = icon('sparkle',18) + '我已知晓 · 开始推算 →';
   const fd=document.getElementById('formDetails');
-  if(fd) fd.open = !(saved && saved.y);
+  if(fd) fd.open = true; // 始终展开，避免用户没发现可以填写
   try{
     const t=new Date();
     const sl=Solar.fromDate(t).getLunar();
