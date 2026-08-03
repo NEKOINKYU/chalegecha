@@ -893,7 +893,7 @@ function render(){
       <div class="th-score"><div class="th-num">${total}</div><div class="th-unit">综合分</div></div>
       <div class="th-main">
         <div class="th-verdict ${vClass}">${verdict}</div>
-        <div class="th-date">${todayStr} · ${sign}座 · 八字 ${eightChar}</div>
+        <div class="th-date">${todayStr} · ${sign}座${hasBirth?' · 八字 '+eightChar:' · 农历 '+lunarStr}</div>
       </div>
     </div>
     <div class="th-plain">${plain}</div>
@@ -1420,20 +1420,6 @@ function runCalc(){
     const dt = document.getElementById('dirtyTip');
     dt.style.display='block';
     dt.innerHTML = deEmoji('⚠️ 出生「月」或「日」还没选，八字/星盘算不准。请补全后再点推算（或点【清空】只看当天黄历）。');
-    return;
-  }
-  // 年都没填 → 只能看黄历，不能排八字
-  if(!y){
-    document.getElementById('app').innerHTML = deEmoji(
-      `<div class="ph fade-in">
-        <div class="ph-icon" data-icon="ming"></div>
-        <div class="ph-title">未填出生信息——仅显示当天黄历</div>
-        <div class="ph-sub">八字 / 命盘 / 星盘 / 大运需要出生年月日。你现在看到的只有黄历宜忌和每日卦象。</div>
-      </div>`);
-    document.querySelectorAll('[data-icon]').forEach(el=>{
-      const n=el.getAttribute('data-icon'); if(n) el.insertAdjacentHTML('afterbegin', icon(n));
-    });
-    if(goBtn){ goBtn.disabled = false; }
     return;
   }
   document.getElementById('dirtyTip').style.display='none';
