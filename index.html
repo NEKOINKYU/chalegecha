@@ -1056,7 +1056,7 @@ function render(){
   </div>
   </div>
   <div style="text-align:center;margin:16px 0 4px">
-    <button class="btn btn-go rerun" onclick="var c=document.querySelector('.card'); if(c&&c.scrollIntoView) c.scrollIntoView({behavior:'smooth'});">↑ 改信息 / 换个日期再算</button>
+    <button class="btn btn-go rerun" onclick="var f=document.querySelector('.form-wrap'); if(f){f.open=true;f.scrollIntoView({behavior:'smooth'});}">↑ 改信息 / 换个日期再算</button>
   </div>
   `;
   app.innerHTML = deEmoji(__H);
