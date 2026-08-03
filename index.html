@@ -89,6 +89,11 @@
   summary{cursor:pointer;color:var(--sub);font-size:12px}
   .mini-detail{font-size:12px;color:var(--sub);line-height:2}
   .input-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  /* 紧凑分组：出生、地点、推算 各自一块 */
+  .form-block{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:var(--radius-sm);padding:3px 6px;background:var(--surface-2);margin-bottom:8px;flex-wrap:wrap}
+  .form-block-label{font-size:12px;color:var(--sub);white-space:nowrap;flex-shrink:0;padding:0 6px 0 2px}
+  .form-block select,.form-block input{border:none!important;background:transparent!important;box-shadow:none!important;padding:5px 4px!important;font-size:13px!important;min-width:0;flex:1}
+  .form-block .btn{padding:4px 10px!important;font-size:12px!important;flex-shrink:0}
   select,input[type=date],input[type=time],input[type=number]{padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2);font-size:13px;color:var(--ink);font-family:inherit;transition:border-color .2s ease,box-shadow .2s ease}
   input[type=number]{width:78px}
   select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
@@ -170,6 +175,11 @@
     .input-row{flex-direction:column;align-items:stretch}
     .input-row select,.input-row input{max-width:100%!important;width:100%}
     .loc-select{max-width:100%!important}
+    /* 表单块：手机上允许换行但保持紧凑 */
+    .form-block{flex-wrap:wrap;gap:3px;padding:4px 6px}
+    .form-block-label{font-size:11px;padding:0 4px 0 0}
+    .form-block select,.form-block input{font-size:13px!important;padding:6px 3px!important}
+    .form-block .btn{font-size:11px!important;padding:5px 8px!important}
     /* Hero 首页 */
     .hero-title{font-size:clamp(42px,14vw,72px);letter-spacing:3px}
     .hero-tag{font-size:14px}
@@ -350,10 +360,10 @@
   <div class="card form-card">
   <div class="form-hint">
     填 <b>你自己的</b> 出生年月日时 → 排八字、推用神、算大运、看星盘，再和黄历融合出宜忌。<br>
-    <b>推算日期</b>默认今天，可改成任意一天（想验证昨天、规划出行日都可以）——所有宜忌/卦象/四维都按你选的日期算。<br>
-    <b>出生地</b>：国家 → 省 → 市 → 区/县 选到你的地方即可（时区/经纬度后台自动处理）；国外选「其他地区」。时辰不记得也能算（降级）。
+    不知道的可以不填（时辰/地点无妨），推算会自动降级。
   </div>
-  <div class="input-row">
+  <div class="form-block">
+    <span class="form-block-label">出生</span>
     <select id="birthYear"><option value="">年</option></select>
     <select id="birthMonth"><option value="">月</option></select>
     <select id="birthDay"><option value="">日</option></select>
@@ -371,24 +381,25 @@
       <option value="1">男</option><option value="0">女</option>
     </select>
   </div>
-  <div class="input-row" id="regionRow">
-    <select id="birthCountry" onchange="pickCountry()" class="loc-select" style="max-width:128px">
-      <option value="">国家/地区</option>
+  <div class="form-block" id="regionBlock">
+    <span class="form-block-label">出生地</span>
+    <select id="birthCountry" onchange="pickCountry()">
+      <option value="">国家</option>
       <option value="cn">中国</option>
-      <option value="world">其他地区</option>
+      <option value="world">其他</option>
     </select>
-    <select id="birthProv" onchange="pickProv()" class="loc-select"><option value="">省</option></select>
-    <select id="birthCity" onchange="pickCity2()" class="loc-select"><option value="">市</option></select>
-    <select id="birthArea" onchange="pickArea()" class="loc-select"><option value="">区/县</option></select>
-    <select id="birthWorldCity" onchange="pickWorldCity()" class="loc-select" style="display:none"><option value="">选择城市</option></select>
+    <select id="birthProv" onchange="pickProv()"><option value="">省</option></select>
+    <select id="birthCity" onchange="pickCity2()"><option value="">市</option></select>
+    <select id="birthArea" onchange="pickArea()"><option value="">区/县</option></select>
+    <select id="birthWorldCity" onchange="pickWorldCity()" style="display:none"><option value="">城市</option></select>
     <input type="hidden" id="birthLat"><input type="hidden" id="birthLng"><input type="hidden" id="birthTz" value="8">
   </div>
-  <div class="input-row">
-    <b style="font-size:12.5px;color:var(--gold)">推算日期</b>
-    <input type="date" id="targetDate" style="max-width:160px" title="可改任意日期：验证昨天、规划未来都行">
-    <input type="time" id="targetTime" style="max-width:105px" title="推算时刻（四维宜忌·时 与起卦用）">
+  <div class="form-block">
+    <span class="form-block-label">推算</span>
+    <input type="date" id="targetDate" title="可改任意日期">
+    <input type="time" id="targetTime" title="推算时刻">
     <button class="btn btn-go" id="goBtn" onclick="runCalc()">开始推算</button>
-    <button class="btn btn-ghost" data-icon="dice" onclick="fillExample()">填入随机名人示例</button>
+    <button class="btn btn-ghost" data-icon="dice" onclick="fillExample()">随机示例</button>
     <button class="btn btn-clear" onclick="clearBirth()">清空</button>
   </div>
   <div id="exampleNote" class="mini-detail" style="display:none"></div>
