@@ -1500,6 +1500,11 @@ function enterApp(){
   }
   window.scrollTo({top:0,behavior:'auto'});
   setTimeout(()=>{ if(intro) intro.style.display='none'; }, 520);
+  // 每次进正文都把推算日期刷新到今天（防止浏览器缓存/残留旧日期导致"关了再开内容没变"）
+  const now=new Date();
+  const pd=n=>String(n).padStart(2,'0');
+  document.getElementById('targetDate').value = `${now.getFullYear()}-${pd(now.getMonth()+1)}-${pd(now.getDate())}`;
+  document.getElementById('targetTime').value = `${pd(now.getHours())}:${pd(now.getMinutes())}`;
   let saved=null;
   try{ saved=JSON.parse(localStorage.getItem('zlhy_birth_v3')||'null'); }catch(e){}
   if(saved && saved.y){ runCalc(); }
