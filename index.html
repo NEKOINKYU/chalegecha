@@ -200,9 +200,8 @@
     .astro-grid{grid-template-columns:1fr}
     /* 表单摘要 */
     .form-summary{font-size:13px}
-    /* 关键词 + 弹窗解释：加大触控区、底部居中 */
+    /* 关键词触控区加大 */
     .yw{padding:3px 5px}
-    .word-tip{bottom:80px!important;left:12px!important;right:12px!important;top:auto!important;max-width:calc(100vw - 24px)!important;font-size:13px}
   }
 
   /* ============ 今日一屏摘要（首屏极简卡） ============ */
@@ -1114,21 +1113,27 @@ function showWordTip(e, arg){
   if(!d && D.CHENG_GU && D.CHENG_GU.poems[w]) d = '袁天罡称骨批语：<br>' + D.CHENG_GU.poems[w];
   tip.innerHTML = `<b>${escHtml(w)}</b>${d || '黄历/占星传统用词，暂无可查释义，可按字面理解'}`;
   tip.style.display = 'block';
-  // 手机上用触摸坐标，桌面用鼠标坐标
-  const cx = (e.touches && e.touches[0] ? e.touches[0].clientX : e.changedTouches ? e.changedTouches[0].clientX : e.clientX) || 0;
-  const cy = (e.touches && e.touches[0] ? e.touches[0].clientY : e.changedTouches ? e.changedTouches[0].clientY : e.clientY) || 0;
+  // 优先取触摸坐标（手机），fallback 鼠标坐标
+  const cx = (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : e.clientX) || 0;
+  const cy = (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : e.clientY) || 0;
   const iw = window.innerWidth, ih = window.innerHeight;
-  // 窄屏（手机）居中显示；宽屏跟随触摸/鼠标位置
-  if(iw < 480){
-    tip.style.left = '12px'; tip.style.right = '12px'; tip.style.top = 'auto'; tip.style.bottom = '80px';
-    tip.style.maxWidth = 'calc(100vw - 24px)';
-  } else {
-    const x = Math.min(Math.max(cx, 10), iw - 260);
-    const y = Math.min(cy + 22, ih - 90);
-    tip.style.left = x+'px'; tip.style.top = y+'px';
-    tip.style.right = 'auto'; tip.style.bottom = 'auto';
-    tip.style.maxWidth = '250px';
-  }
+  // 读取弹窗实际尺寸做智能定位
+  void tip.offsetWidth; // force layout
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  const maxW = Math.min(250, iw - 24);
+  tip.style.maxWidth = maxW + 'px';
+  tip.style.right = 'auto'; tip.style.bottom = 'auto';
+  let left = cx - maxW/2; // 水平居中于点击位置
+  let top = cy + 14;      // 默认在点击位置下方
+  // 防左溢出
+  if(left < 12){ left = 12; }
+  if(left + maxW > iw - 12){ left = iw - 12 - maxW; }
+  // 防底部溢出 → 弹到上方
+  if(top + th > ih - 20){ top = cy - th - 8; }
+  // 防顶部溢出
+  if(top < 20){ top = 20; }
+  tip.style.left = left + 'px';
+  tip.style.top = top + 'px';
 }
 
 /* ================= 袁天罡称骨 ================= */
