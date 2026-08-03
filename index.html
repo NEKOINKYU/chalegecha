@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="theme-color" content="#f3f1eb" media="(prefers-color-scheme:light)">
 <meta name="theme-color" content="#131115" media="(prefers-color-scheme:dark)">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -426,6 +427,8 @@
 <script src="./lib/celestine.js"></script>
 <script src="./data.js"></script>
 <script>
+// 浏览器从后台缓存恢复时强制刷新（解决手机"关了再开内容不变"）
+window.addEventListener('pageshow',function(e){ if(e.persisted) location.reload(); });
 const D = window.DATA;
 const GAN = D.GAN_WUXING, ZHI = D.ZHI_CANG, SHENG = D.SHENG, KE = D.KE, WUXING_TEXT = D.WUXING_TEXT;
 const ELEM_TO_WUXING = {'火':'火','土':'土','风':'木','水':'水'};
