@@ -894,7 +894,7 @@ function render(){
       <div class="th-main">
         <div class="th-verdict ${vClass}">${verdict}</div>
         <div class="th-date">${todayStr} · ${sign}座${hasBirth?'':' · 农历 '+lunarStr}</div>
-        ${hasBirth?`<div class="eight-char" style="margin-top:4px;justify-content:flex-start">今日八字 ${colorBazi(eightChar)}</div>`:''}
+        ${hasBirth?`<div class="eight-char" style="margin-top:4px;justify-content:flex-start;padding-left:0">今日八字 ${colorBazi(eightChar)}</div>`:''}
       </div>
     </div>
     <div class="th-plain">${plain}</div>
@@ -910,21 +910,18 @@ function render(){
 
   <!-- ===== 完整今日（默认折叠） ===== -->
   <div id="todayDetail" class="hidden">
-  <!-- 今日解读（白话，置顶；右侧小字一言） -->
-  <div class="card fusion">
-    <h2>🗣 今日解读</h2>
+  <!-- 今日解读（融合依据 + 一言，避免和首页总结重复） -->
+  <div class="card">
+    <h2>🗣 推算依据</h2>
+    <div class="plain-text">${fusionWhy}</div>
+    <div id="guaLine" class="mini-detail" style="margin:8px 0;color:#8a6d3f;line-height:2"></div>
     <div class="fusion-grid">
       <div class="fusion-main">
-        <div class="plain-text">${plain}</div>
-        <div id="guaLine" class="mini-detail" style="margin:8px 0;color:#8a6d3f;line-height:2"></div>
-        <div class="score-row"><span class="score-label">综合</span><div class="score-bar"><div class="score-fill" style="width:${total}%;background:${total>=75?'var(--good)':total>=60?'var(--mid)':total>=45?'var(--warn)':'var(--bad)'}"></div></div><b>${total}/100</b></div>
-        <div class="verdict ${vClass}">${verdict}</div>
-        <details><summary>展开看各维度分数与详细依据</summary>
+        <details style="margin-top:4px"><summary>各维度详细分数</summary>
           <div class="score-row" style="margin-top:8px"><span class="score-label">黄历</span><div class="score-bar"><div class="score-fill" style="width:${huali}%;background:var(--accent)"></div></div><b>${huali}</b></div>
           <div class="score-row"><span class="score-label">八字用神</span><div class="score-bar"><div class="score-fill" style="width:${baziScore}%;background:${hasBirth?'var(--wx-jin)':'var(--line)'}"></div></div><b>${hasBirth?baziScore:'—'}</b></div>
           <div class="score-row"><span class="score-label">星座</span><div class="score-bar"><div class="score-fill" style="width:${signScore}%;background:var(--purple)"></div></div><b>${signScore}</b></div>
           <div class="score-row"><span class="score-label">大运</span><div class="score-bar"><div class="score-fill" style="width:${dayunScore}%;background:${daYun?'var(--blue)':'var(--line)'}"></div></div><b>${daYun?dayunScore:'—'}</b></div>
-          <div class="why" style="margin-top:8px">${fusionWhy}</div>
         </details>
       </div>
       <div class="fusion-side">
