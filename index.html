@@ -146,11 +146,12 @@
   .astro-item{font-size:12.5px;padding:8px 11px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;line-height:1.6}
   .astro-item b{color:var(--accent)}
   .aspect-line{font-size:12px;color:var(--ink-2);line-height:1.9}
-  .yw{cursor:pointer;color:var(--accent);border-bottom:1px dashed color-mix(in srgb,var(--accent) 60%,transparent);padding:2px 3px;white-space:nowrap;transition:background .15s ease;touch-action:manipulation}
-  .yw:hover{background:var(--accent-soft);border-radius:4px}
+  .yw{cursor:pointer;color:var(--accent);border-bottom:1px dashed color-mix(in srgb,var(--accent) 60%,transparent);padding:2px 3px;white-space:nowrap;transition:all .15s ease;touch-action:manipulation;border-radius:3px}
+  .yw:hover,.yw-open{background:var(--accent-soft);border-radius:4px}
   .yw:active{background:var(--accent-soft);border-radius:4px}
-  .word-tip{position:fixed;z-index:999;background:var(--card);border:1px solid var(--line-2);border-radius:14px;padding:11px 15px;font-size:12.5px;color:var(--ink-2);box-shadow:0 8px 30px rgba(0,0,0,.16);max-width:250px;line-height:1.8;display:none}
-  .word-tip b{color:var(--accent);margin-right:6px}
+  .yw-detail{display:block;background:var(--card-2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:0 10px 10px 10px;padding:10px 14px;margin:3px 0 8px;font-size:13px;line-height:1.9;color:var(--ink-2);animation:ywSlide .28s var(--ease) both}
+  .yw-detail b{color:var(--accent);margin-right:4px}
+  @keyframes ywSlide{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
   .plain-text{font-size:14px;line-height:2;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:10px}
   .plain-text b{color:var(--accent);font-weight:600}
   .fusion-grid{display:grid;grid-template-columns:1fr 210px;gap:14px;align-items:start}
@@ -205,12 +206,7 @@
     .form-summary{font-size:13px}
     /* 关键词触控区加大 */
     .yw{padding:3px 5px}
-    /* 底部文案加大 */
-    .footer{font-size:11.5px;line-height:2.1}
-    /* 首页 hero 允许滚动（手机内容可能超出） */
-    .intro{overflow-y:auto;-webkit-overflow-scrolling:touch}
-    /* 更新横幅别被 iPhone 底部指示条挡住 */
-    .update-banner{bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+    .yw-detail{font-size:13px;padding:9px 12px}
   }
 
   /* ============ 今日一屏摘要（首屏极简卡） ============ */
@@ -399,8 +395,6 @@
   <div id="dirtyTip" class="dirty-tip" style="display:none"></div>
   </div>
 </details>
-
-<div id="wordTip" class="word-tip"></div>
 
 <div id="app"></div>
 
@@ -1111,53 +1105,32 @@ function colorGZ(gz){
   }).join('');
 }
 function showWordTip(e, arg){
-  e.stopPropagation();
-  e.preventDefault();
-  const tip = document.getElementById('wordTip');
-  let w = '', el = null;
-  if(typeof arg === 'string'){ w = arg; }
-  else if(arg && arg.getBoundingClientRect){ el = arg; w = el.getAttribute('data-w') || ''; }
-  if(!w){ tip.style.display='none'; return; }
+  e.stopPropagation(); e.preventDefault();
+  let el = null;
+  if(arg && arg.getBoundingClientRect) el = arg;
+  if(!el) return;
+  // 已展开→收起
+  if(el.classList.contains('yw-open')){ closeWordDetail(el); return; }
+  // 先收掉其他展开的内容
+  document.querySelectorAll('.yw-open').forEach(x => closeWordDetail(x));
+  const w = el.getAttribute('data-w') || '';
   let d = D.YIJI_DICT[w] || D.ASTRO_DICT[w] || '';
-  if(!d && D.CHENG_GU && D.CHENG_GU.poems[w]) d = '袁天罡称骨批语：<br>' + D.CHENG_GU.poems[w];
-  tip.innerHTML = `<b>${escHtml(w)}</b>${d || '黄历/占星传统用词，暂无可查释义，可按字面理解'}`;
-  tip.style.display = 'block';
-  // Step 1: 先设 maxWidth 限制，再读真实宽高
-  tip.style.maxWidth = Math.min(250, window.innerWidth - 24) + 'px';
-  tip.style.right = 'auto'; tip.style.bottom = 'auto';
-  void tip.offsetWidth;
-  const tw = tip.offsetWidth, th = tip.offsetHeight;
-  if(!tw){ return; } // 未渲染完则放弃本次
-
-  // Step 2: 取词的真实屏幕位置（getBoundingClientRect = 视口坐标，和 position:fixed 一致）
-  let anchorX, anchorY;
-  if(el){
-    const r = el.getBoundingClientRect();
-    anchorX = r.left + r.width/2;  // 词的水平中心
-    anchorY = r.bottom;             // 词的下边缘
-  } else {
-    anchorX = (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : e.clientX) || 0;
-    anchorY = (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : e.clientY) || 0;
-  }
-
-  // Step 3: 弹窗水平居中于词，垂直紧贴词下方
-  let left = anchorX - tw/2;
-  let top = anchorY + 4;
-  const iw = window.innerWidth, ih = window.innerHeight;
-  const pad = 8;
-
-  // Step 4: 水平防溢出（左右各留 pad）
-  if(left < pad) left = pad;
-  if(left + tw > iw - pad) left = iw - pad - tw;
-
-  // Step 5: 垂直防溢出：下方不够 → 弹到词上方；上方不够 → 最低 pad
-  if(top + th > ih - pad){
-    top = (el ? el.getBoundingClientRect().top : anchorY) - th - 4;
-  }
-  if(top < pad) top = pad;
-
-  tip.style.left = left + 'px';
-  tip.style.top = top + 'px';
+  if(!d && D.CHENG_GU && D.CHENG_GU.poems[w]) d = '袁天罡称骨批语：' + D.CHENG_GU.poems[w];
+  var div = document.createElement('div');
+  div.className = 'yw-detail';
+  div.innerHTML = '<b>' + escHtml(w) + '</b> ' + (d || '黄历/占星传统用词，暂无可查释义，可按字面理解');
+  div.onclick = function(ev){ ev.stopPropagation(); closeWordDetail(el); };
+  el.after(div);
+  el.classList.add('yw-open');
+  // 页面滚动时自动收起
+  var onScroll = function(){ if(el.classList.contains('yw-open')) closeWordDetail(el); };
+  window.addEventListener('scroll', onScroll, {passive:true, once:true});
+}
+function closeWordDetail(el){
+  if(!el) return;
+  var nxt = el.nextElementSibling;
+  if(nxt && nxt.classList.contains('yw-detail')) nxt.remove();
+  el.classList.remove('yw-open');
 }
 
 /* ================= 袁天罡称骨 ================= */
@@ -1183,10 +1156,10 @@ function calcChengGu(birthLunar, hour){
   const cn = liangToCN(w);
   return {cn, poem: D.CHENG_GU.poems[cn] || ''};
 }
+// 点页面其他地方时，收起所有展开的关键词解释
 document.addEventListener('click', function(e){
-  if(!e.target.closest('.yw')){
-    const tip = document.getElementById('wordTip');
-    if(tip) tip.style.display = 'none';
+  if(!e.target.closest('.yw') && !e.target.closest('.yw-detail')){
+    document.querySelectorAll('.yw-open').forEach(function(el){ closeWordDetail(el); });
   }
 });
 
