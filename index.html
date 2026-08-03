@@ -185,7 +185,7 @@
     /* 表单块：手机上允许换行但保持紧凑 */
     .form-block{flex-wrap:wrap;gap:3px;padding:4px 6px}
     .form-block-label{font-size:11px;padding:0 4px 0 0}
-    .form-block select,.form-block input{font-size:13px!important;padding:6px 3px!important}
+    .form-block select,.form-block input{font-size:12px!important;padding:5px 2px!important}
     .form-block .btn{font-size:11px!important;padding:5px 8px!important}
     /* Hero 首页 */
     .hero-title{font-size:clamp(42px,14vw,72px);letter-spacing:3px}
@@ -835,7 +835,7 @@ function render(){
       const PLANET_CN = {Sun:'太阳',Moon:'月亮',Mercury:'水星',Venus:'金星',Mars:'火星',Jupiter:'木星',Saturn:'土星',Uranus:'天王星',Neptune:'海王星',Pluto:'冥王星',Chiron:'凯龙星'};
       const ASPECT_CN = {conjunction:'合',opposition:'冲',trine:'拱',square:'刑',sextile:'六合',quincunx:'梅花'};
       let planets = (chart.planets||[]).filter(p=>PLANET_CN[p.name]);
-      let items = planets.slice(0,10).map(p=>`<div class="astro-item"><b>${PLANET_CN[p.name]||p.name}</b><br>${p.formatted}</div>`).join('');
+      let items = planets.slice(0,10).map(p=>{ const sc=getSignCN(p.formatted); return `<div class="astro-item"><b>${PLANET_CN[p.name]||p.name}</b>${sc?' · <b style="color:var(--accent)">'+sc+'座</b>':''}<br>${p.formatted}</div>`; }).join('');
       let angles = '';
       if(lat!=null && lng!=null){
         angles = `<div class="kv" style="margin-top:8px"><b><span class="yw" onclick="showWordTip(event,'上升星座')">上升</span>：</b>${chart.angles.ascendant.formatted}　<b><span class="yw" onclick="showWordTip(event,'中天')">中天</span>：</b>${chart.angles.midheaven.formatted}</div>`;
