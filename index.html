@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>查了个查 · 每日宜忌融合推算</title>
 <style>
   /* ============ 设计语言：暖调纸感 · 圆润 · 柔和 · 丝滑 ============ */
@@ -1467,6 +1470,8 @@ function saveBirth(){
 
 /* ========== 初始化 ========== */
 (function init(){
+  // 每次页面加载强制清空 #app，防止浏览器缓存残留旧渲染内容
+  const appEl = document.getElementById('app'); if(appEl) appEl.innerHTML = '';
   // 把带 data-icon 的静态元素（Tab / 表单摘要 / 示例按钮）注入定制线条图标
   document.querySelectorAll('[data-icon]').forEach(el=>{
     const n=el.getAttribute('data-icon');
