@@ -1106,15 +1106,17 @@ function colorGZ(gz){
 }
 function showWordTip(e, arg){
   e.stopPropagation(); e.preventDefault();
-  let el = null;
-  if(arg && arg.getBoundingClientRect) el = arg;
-  if(!el) return;
+  // 兼容两种调用：传元素(fmtWords) 或 传字符串(命盘/星盘模板)
+  var el = null, w = '';
+  if(arg && arg.getBoundingClientRect){ el = arg; w = el.getAttribute('data-w') || ''; }
+  else { w = String(arg||''); el = e.target && e.target.closest ? e.target.closest('.yw') : null; }
+  if(!el){ return; }
+  if(!w){ w = el.getAttribute('data-w') || el.textContent.slice(0,8); }
   // 已展开→收起
   if(el.classList.contains('yw-open')){ closeWordDetail(el); return; }
-  // 先收掉其他展开的内容
-  document.querySelectorAll('.yw-open').forEach(x => closeWordDetail(x));
-  const w = el.getAttribute('data-w') || '';
-  let d = D.YIJI_DICT[w] || D.ASTRO_DICT[w] || '';
+  // 收掉其他展开
+  document.querySelectorAll('.yw-open').forEach(function(x){ closeWordDetail(x); });
+  var d = D.YIJI_DICT[w] || D.ASTRO_DICT[w] || '';
   if(!d && D.CHENG_GU && D.CHENG_GU.poems[w]) d = '袁天罡称骨批语：' + D.CHENG_GU.poems[w];
   var div = document.createElement('div');
   div.className = 'yw-detail';
@@ -1122,7 +1124,6 @@ function showWordTip(e, arg){
   div.onclick = function(ev){ ev.stopPropagation(); closeWordDetail(el); };
   el.after(div);
   el.classList.add('yw-open');
-  // 页面滚动时自动收起
   var onScroll = function(){ if(el.classList.contains('yw-open')) closeWordDetail(el); };
   window.addEventListener('scroll', onScroll, {passive:true, once:true});
 }
