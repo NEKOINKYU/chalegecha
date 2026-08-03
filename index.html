@@ -1127,12 +1127,15 @@ function colorBaziMini(str){
 function colorBaziSingle(str){
   if(!str) return '';
   const s = str.replace(/\s+/g,'');
-  return s.split('').map((c,i)=>{
-    const isGan = i%2===0;
+  if(s.length<8) return escHtml(s);
+  const gans=[], zhis=[];
+  for(let i=0;i<s.length;i+=2){ gans.push(s[i]); zhis.push(s[i+1]||''); }
+  const c=(c,isGan)=>{
     const wx = isGan ? (GAN[c]||'') : (ZHI[c]||'');
-    const color = WUXING_TEXT[wx]||'var(--ink)';
-    return `<b style="color:${color}">${escHtml(c)}</b>`;
-  }).join(' ');
+    return WUXING_TEXT[wx]||'var(--ink)';
+  };
+  return gans.map((g,i)=>`<b style="color:${c(g,true)}">${escHtml(g)}</b>`).join(' ') +
+    '<br>' + zhis.map((z,i)=>`<b style="color:${c(z,false)}">${escHtml(z)}</b>`).join(' ');
 }
 /* 干支（无标签行内）配色：用于「大运」等单组干支，按天干/地支五行属性上色 */
 function colorGZ(gz){
