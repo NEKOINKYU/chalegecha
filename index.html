@@ -1122,28 +1122,40 @@ function showWordTip(e, arg){
   if(!d && D.CHENG_GU && D.CHENG_GU.poems[w]) d = '袁天罡称骨批语：<br>' + D.CHENG_GU.poems[w];
   tip.innerHTML = `<b>${escHtml(w)}</b>${d || '黄历/占星传统用词，暂无可查释义，可按字面理解'}`;
   tip.style.display = 'block';
-  // 用元素位置定位，比事件坐标可靠（折叠区/滚动画布均准确）
-  let cx, cy;
-  if(el){
-    const rect = el.getBoundingClientRect();
-    cx = rect.left + rect.width/2;
-    cy = rect.bottom + 4; // 词的正下方
-  } else {
-    cx = (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : e.clientX) || 0;
-    cy = (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : e.clientY) || 0;
-  }
-  const iw = window.innerWidth, ih = window.innerHeight;
-  void tip.offsetWidth;
-  const tw = tip.offsetWidth || 200, th = tip.offsetHeight || 60;
-  const maxW = Math.min(250, iw - 24);
-  tip.style.maxWidth = maxW + 'px';
+  // Step 1: 先设 maxWidth 限制，再读真实宽高
+  tip.style.maxWidth = Math.min(250, window.innerWidth - 24) + 'px';
   tip.style.right = 'auto'; tip.style.bottom = 'auto';
-  let left = cx - maxW/2;
-  let top = cy;
-  if(left < 12){ left = 12; }
-  if(left + maxW > iw - 12){ left = iw - 12 - maxW; }
-  if(top + th > ih - 20){ top = (el ? el.getBoundingClientRect().top : cy) - th - 8; } // 不够→弹到词上方
-  if(top < 20){ top = 20; }
+  void tip.offsetWidth;
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  if(!tw){ return; } // 未渲染完则放弃本次
+
+  // Step 2: 取词的真实屏幕位置（getBoundingClientRect = 视口坐标，和 position:fixed 一致）
+  let anchorX, anchorY;
+  if(el){
+    const r = el.getBoundingClientRect();
+    anchorX = r.left + r.width/2;  // 词的水平中心
+    anchorY = r.bottom;             // 词的下边缘
+  } else {
+    anchorX = (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : e.clientX) || 0;
+    anchorY = (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : e.clientY) || 0;
+  }
+
+  // Step 3: 弹窗水平居中于词，垂直紧贴词下方
+  let left = anchorX - tw/2;
+  let top = anchorY + 4;
+  const iw = window.innerWidth, ih = window.innerHeight;
+  const pad = 8;
+
+  // Step 4: 水平防溢出（左右各留 pad）
+  if(left < pad) left = pad;
+  if(left + tw > iw - pad) left = iw - pad - tw;
+
+  // Step 5: 垂直防溢出：下方不够 → 弹到词上方；上方不够 → 最低 pad
+  if(top + th > ih - pad){
+    top = (el ? el.getBoundingClientRect().top : anchorY) - th - 4;
+  }
+  if(top < pad) top = pad;
+
   tip.style.left = left + 'px';
   tip.style.top = top + 'px';
 }
