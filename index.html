@@ -959,7 +959,7 @@ function render(){
   <div class="card">
     <h2>📅 ${todayStr}</h2>
     <div class="lunar-line">${lunarStr} · ${shengXiao}年 · ${sign}座</div>
-    <div class="eight-char">八字 ${eightChar}</div>
+    <div class="eight-char">八字 ${colorBaziMini(eightChar)}</div>
     <div class="tags">
       <span class="tag"><span class="yw" onclick="showWordTip(event,'值神')">值神</span> ${tianShen}</span><span class="tag"><span class="yw" onclick="showWordTip(event,'纳音')">纳音</span> ${naYin}</span>
       <span class="tag"><span class="yw" onclick="showWordTip(event,'冲煞')">冲</span> ${chong}</span><span class="tag"><span class="yw" onclick="showWordTip(event,'喜神方位')">喜神</span> ${xiPos}</span>
