@@ -1462,7 +1462,7 @@ function fillExample(){
   note.style.display = 'block';
   note.innerHTML = deEmoji(`🎲 已填入示例：<b>${escHtml(c.name)}</b>（${escHtml(c.note)}，${c.y}-${c.m}-${c.d} 生于 ${c.tz>0?'+':''}${c.tz} 时区）。公开资料多无精确出生时辰，已按「时辰未知」处理（星盘/大运会降级并提示）。`);
   saveBirth();
-  if(hasRun){ markDirty(); } else { note.innerHTML += ' 点【🔮 开始推算】看结果。'; }
+  if(hasRun){ markDirty(); } else { note.innerHTML += ' 点【开始推算】看结果。'; }
 }
 function clearBirth(){
   ['birthYear','birthMonth','birthDay','birthHour','birthGender','birthCountry','birthLat','birthLng','birthTz'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
