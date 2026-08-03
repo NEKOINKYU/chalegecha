@@ -1422,6 +1422,20 @@ function runCalc(){
     dt.innerHTML = deEmoji('⚠️ 出生「月」或「日」还没选，八字/星盘算不准。请补全后再点推算（或点【清空】只看当天黄历）。');
     return;
   }
+  // 年都没填 → 只能看黄历，不能排八字
+  if(!y){
+    document.getElementById('app').innerHTML = deEmoji(
+      `<div class="ph fade-in">
+        <div class="ph-icon" data-icon="ming"></div>
+        <div class="ph-title">未填出生信息——仅显示当天黄历</div>
+        <div class="ph-sub">八字 / 命盘 / 星盘 / 大运需要出生年月日。你现在看到的只有黄历宜忌和每日卦象。</div>
+      </div>`);
+    document.querySelectorAll('[data-icon]').forEach(el=>{
+      const n=el.getAttribute('data-icon'); if(n) el.insertAdjacentHTML('afterbegin', icon(n));
+    });
+    if(goBtn){ goBtn.disabled = false; }
+    return;
+  }
   document.getElementById('dirtyTip').style.display='none';
   if(goBtn){ goBtn.disabled = true; goBtn.textContent = '推算中…'; }
   document.getElementById('app').innerHTML =
