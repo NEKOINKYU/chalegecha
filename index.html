@@ -961,9 +961,9 @@ function render(){
     <div class="lunar-line">${lunarStr} · ${shengXiao}年 · ${sign}座</div>
     <div class="eight-char">八字 ${eightChar}</div>
     <div class="tags">
-      <span class="tag">值神 ${tianShen}</span><span class="tag">纳音 ${naYin}</span>
-      <span class="tag">冲 ${chong}</span><span class="tag">喜神 ${xiPos}</span>
-      <span class="tag ${lyEx[1]==='吉'?'ly-ji':lyEx[1]==='凶'?'ly-xiong':'ly-ping'}">六曜 ${liuYao}（${lyEx[0]}）</span>
+      <span class="tag"><span class="yw" onclick="showWordTip(event,'值神')">值神</span> ${tianShen}</span><span class="tag"><span class="yw" onclick="showWordTip(event,'纳音')">纳音</span> ${naYin}</span>
+      <span class="tag"><span class="yw" onclick="showWordTip(event,'冲煞')">冲</span> ${chong}</span><span class="tag"><span class="yw" onclick="showWordTip(event,'喜神方位')">喜神</span> ${xiPos}</span>
+      <span class="tag ${lyEx[1]==='吉'?'ly-ji':lyEx[1]==='凶'?'ly-xiong':'ly-ping'}"><span class="yw" onclick="showWordTip(event,'六曜')">六曜</span> ${liuYao}（${lyEx[0]}）</span>
     </div>
     <div class="yi-ji">
       <div class="yi"><b>宜</b><br>${fmtWords(yi,8)||'诸事不宜'}</div>
@@ -1055,6 +1055,9 @@ function render(){
     <h2>👤 我的档案</h2>
     <div class="kv">
       <div><b>出生：</b>${hasBirth?`${y}年${m}月${d}日${h>=0?' · '+['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'][h/2]+'时':' · 时辰未知'} · ${gender===1?'男':gender===0?'女':'—'}`:'（未填）'}</div>
+      <div><b>生肖：</b>${hasBirth?(()=>{try{return Solar.fromYmdHms(y,m,d,h>=0?h:12,0,0).getLunar().getYearShengXiao();}catch(e){return shengXiao;}})():shengXiao}${hasBirth?'（本命）':'（当年）'}</div>
+      <div><b>星座：</b>${hasBirth?(()=>{try{return Solar.fromYmdHms(y,m,d,h>=0?h:12,0,0).getXingZuo();}catch(e){return sign;}})():sign}座 · ${hasBirth?uSig.element:sig.element}象（五行${ELEM_TO_WUXING[hasBirth?uSig.element:sig.element]}）</div>
+      <div><b>幸运色：</b>${dressHtml}</div>
       <div><b>出生地：</b>${regionTxt||'（未选）'}</div>
       <div><b>推算坐标：</b>${lat!=null&&lng!=null?`${lat.toFixed(2)}°, ${lng.toFixed(2)}° · UTC${tz>=0?'+':''}${tz}`:'（未填）'}</div>
       <div><b>推算日期：</b>${target} ${targetTime}</div>
@@ -1066,7 +1069,7 @@ function render(){
       ${chengGu?`<div><b>称骨：</b>${chengGu.cn}</div>`:''}
       `:''}
     </div>
-    <div class="mini-detail" style="margin-top:10px">这就是你这次推算用的「立体对象」——换日期不影响这里，换出生信息才变。</div>
+    <div class="mini-detail" style="margin-top:10px">填了出生信息的项目按你的数据算，没填的按今天通用数据。</div>
   </div>
   </div>
   <div style="text-align:center;margin:16px 0 4px">
