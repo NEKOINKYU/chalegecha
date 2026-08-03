@@ -183,10 +183,14 @@
     .input-row select,.input-row input{max-width:100%!important;width:100%}
     .loc-select{max-width:100%!important}
     /* 表单块：手机上允许换行但保持紧凑 */
-    .form-block{flex-wrap:wrap;gap:3px;padding:4px 6px}
-    .form-block-label{font-size:11px;padding:0 4px 0 0}
-    .form-block select,.form-block input{font-size:12px!important;padding:5px 2px!important}
-    .form-block .btn{font-size:11px!important;padding:5px 8px!important}
+    .form-block{flex-wrap:wrap;gap:2px;padding:4px 6px}
+    .form-block-label{flex-basis:100%;font-size:11px;padding:1px 0;margin-bottom:2px}
+    .form-block select,.form-block input{font-size:12px!important;padding:5px 2px!important;flex:1 1 auto}
+    .form-block .btn{font-size:11px!important;padding:5px 8px!important;flex:none}
+    /* 推算行：按钮太多→分两排 */
+    .form-block:last-child{flex-wrap:wrap}
+    .form-block:last-child .form-block-label{flex-basis:100%}
+    .form-block:last-child input{flex:1 1 40%}
     /* Hero 首页 */
     .hero-title{font-size:clamp(42px,14vw,72px);letter-spacing:3px}
     .hero-tag{font-size:14px}
