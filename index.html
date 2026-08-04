@@ -1301,6 +1301,9 @@ function rollGua(targetId){
   const guaGood = /吉|宜|利|升|成|泰|益|大有|丰|谦|复|同人/.test(g.baseDesc);
   const guaBad = /凶|慎|忌|困|讼|蹇|剥|否|明夷|难|无妄/.test(g.baseDesc);
   const jx = guaGood?'偏吉':guaBad?'偏谨慎':'中平';
+  const bianGood = /吉|宜|利|升|成|泰|益|大有|丰|谦|复|同人/.test(g.bianDesc||'');
+  const bianBad = /凶|慎|忌|困|讼|蹇|剥|否|明夷|难|无妄/.test(g.bianDesc||'');
+  const bianJx = bianGood?'偏吉':bianBad?'偏谨慎':'中平';
   const sim = (D.GUA_SIMPLE && D.GUA_SIMPLE[g.baseName]) ? D.GUA_SIMPLE[g.baseName] : null;
   const box = document.getElementById(targetId || 'guaBox');
   if(box) box.innerHTML = deEmoji(`
@@ -1314,6 +1317,7 @@ function rollGua(targetId){
       ${g.bianName?`<div class="gua-arrow">➜</div>
       <div class="gua-box">
         <div class="g-name">${guaSvg(g.nD, g.nU, 0)} ${g.bianName}</div>
+        <div class="g-jx ${bianGood?'good-t':bianBad?'bad-t':'mid-t'}">${bianJx}</div>
         <div class="g-desc">${g.bianDesc}</div>
         <div class="mini-detail" style="margin-top:4px">变卦（第${g.moving}爻动而变）</div>
       </div>`:''}
