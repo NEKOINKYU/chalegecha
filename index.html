@@ -247,6 +247,7 @@
   .yiji-mini{font-size:12px;font-weight:700;margin-right:2px}
   .yiji-mini.y{color:var(--good)} .yiji-mini.n{color:var(--bad)}
   .th-gua{margin-top:4px}
+  .th-quote{margin-top:10px;font-style:italic;color:var(--sub);font-size:12.5px;text-align:center;line-height:1.7}
   .th-gua-in{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;background:var(--accent-soft);border:1px solid var(--line);border-radius:12px;padding:9px 12px;animation:guaPulse 5s ease-in-out infinite}
   @keyframes guaPulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 0%,transparent)}50%{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 12%,transparent)}}
   .th-gua-label{font-size:12px;color:var(--accent);font-weight:600}
@@ -254,7 +255,6 @@
   .th-gua-jx{font-size:12px;font-weight:600}
   .th-gua-desc{font-size:12px;color:var(--ink-2)}
   .th-more{margin-top:14px;width:100%}
-  #todayDetail.hidden{display:none}
 
   /* ============ Tab 导航 ============ */
   .tabs{position:sticky;top:64px;z-index:5;display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px;margin:4px 0 18px;box-shadow:var(--shadow);overflow-x:auto}
@@ -350,7 +350,7 @@
   <div class="orb orb-2"></div>
   <div class="orb orb-3"></div>
   <div class="intro-inner fade-in-soft">
-    <div class="hero-kicker">每日宜忌 · 融合推算</div>
+    <div class="hero-kicker">每日宜忌 · 刚刚好的小指引</div>
     <h1 class="hero-title">查了个查</h1>
     <p class="hero-tag">八字用神 × 星盘 × 黄历 × 周易，每天给你一点刚刚好的小指引。</p>
     <button class="hero-btn" id="heroBtn" onclick="agreeAndEnter()">我已知晓 · 开始推算 →</button>
@@ -775,26 +775,7 @@ function render(){
   /* 四维/卦象等由按钮或联动触发；此处不再自动起卦 */
   const lyEx = LIUYAO_EXPLAIN[liuYao] || ['','平'];
 
-  /* ---- 四维宜忌（年/月/日/时） ---- */
-  let dims = {};
-  if(hasBirth && ys){
-    const yearGz = L.getYearInGanZhi();           // 年干支
-    const yearW = GAN[yearGz.charAt(0)];
-    const evY = evalAgainstYongShen(yearW, ys);
-    const mySx = (()=>{ try{ return Solar.fromYmdHms(y,m,d,h>=0?h:12,0,0).getLunar().getYearShengXiao(); }catch(e){ return ''; }})();
-    const sxRel = mySx ? shengxiaoRelation(mySx, L.getYearShengXiao()) : null;
-    const monthGz = L.getMonthInGanZhi();         // 农历月干支
-    const monthW = GAN[monthGz.charAt(0)];
-    const evMo = evalAgainstYongShen(monthW, ys);
-    const todayW = GAN[L.getDayGan()];
-    const evD = evalAgainstYongShen(todayW, ys);
-    const thZhi = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'][Math.floor(th/2)];
-    const hourSolar = Solar.fromYmdHms(solar.getYear(), solar.getMonth(), solar.getDay(), th, 0, 0);
-    const hourL = hourSolar.getLunar();
-    const hourW = GAN[hourL.getTimeGan()];
-    const evH = evalAgainstYongShen(hourW, ys);
-    dims = {year:{gz:yearGz, w:yearW, ev:evY, sx:sxRel}, month:{gz:monthGz, w:monthW, ev:evMo}, day:{w:todayW, ev:evD}, hour:{gz:hourW+thZhi, w:hourW, ev:evH, timeYi:hourL.getTimeYi(), timeJi:hourL.getTimeJi()}};
-  }
+  /* 四维宜忌：当前版本不展示，计算保留以备复用 */
 
   /* ---- 穿衣颜色 ---- */
   let dressHtml = '';
@@ -894,7 +875,6 @@ function render(){
     <button class="tab-btn active" data-tab="today" onclick="switchTab('today')">${icon('today')}今日</button>
     <button class="tab-btn" data-tab="ming" onclick="switchTab('ming')">${icon('ming')}命盘</button>
     <button class="tab-btn" data-tab="xing" onclick="switchTab('xing')">${icon('xing')}星盘</button>
-    <button class="tab-btn" data-tab="me" onclick="switchTab('me')">${icon('me')}资料</button>
   </nav>
   <div class="tab-panel active" data-tab="today">
 
@@ -916,42 +896,23 @@ function render(){
     ${hasBirth&&ys?`<div class="th-row" style="font-size:12px"><span class="yiji-mini" style="background:var(--accent-soft);color:var(--accent);border-color:var(--accent)">个人历</span><span class="mini-detail">今日${wx(GAN[L.getDayGan()])}日对你「${evalAgainstYongShen(GAN[L.getDayGan()],ys).rel||'中性'}」</span></div>`:''}
     <div class="th-row"><span class="th-label">幸运色</span>${dressHtml}</div>
     <div class="th-gua">${dayGuaHtml}</div>
-    <button class="btn btn-ghost th-more" onclick="toggleTodayDetail()">📂 展开完整今日（日历 / 四维 / 融合对照）</button>
+    <div id="quoteText" class="th-quote"></div>
   </div>
 
-  <!-- ===== 完整今日（默认折叠） ===== -->
-  <div id="todayDetail" class="hidden">
-  <!-- 今日解读（融合依据 + 一言，避免和首页总结重复） -->
+  <!-- ===== 今日黄历（精简：宜忌 + 农历） ===== -->
   <div class="card">
-    <h2>🗣 推算依据</h2>
-    <div class="plain-text">${fusionWhy}</div>
-    <div id="guaLine" class="mini-detail" style="margin:8px 0;color:#8a6d3f;line-height:2"></div>
-    <div class="fusion-grid">
-      <div class="fusion-main">
-        <details style="margin-top:4px"><summary>各维度详细分数</summary>
-          <div class="score-row" style="margin-top:8px"><span class="score-label">黄历</span><div class="score-bar"><div class="score-fill" style="width:${huali}%;background:var(--accent)"></div></div><b>${huali}</b></div>
-          <div class="score-row"><span class="score-label">八字用神</span><div class="score-bar"><div class="score-fill" style="width:${baziScore}%;background:${hasBirth?'var(--wx-jin)':'var(--line)'}"></div></div><b>${hasBirth?baziScore:'—'}</b></div>
-          <div class="score-row"><span class="score-label">星座</span><div class="score-bar"><div class="score-fill" style="width:${signScore}%;background:var(--purple)"></div></div><b>${signScore}</b></div>
-          <div class="score-row"><span class="score-label">大运</span><div class="score-bar"><div class="score-fill" style="width:${dayunScore}%;background:${daYun?'var(--blue)':'var(--line)'}"></div></div><b>${daYun?dayunScore:'—'}</b></div>
-        </details>
-      </div>
-      <div class="fusion-side">
-        <div class="quote-text" id="quoteText">${localQuote}</div>
-      </div>
+    <h2>📅 今日黄历</h2>
+    <div class="lunar-line">${lunarStr} · ${shengXiao}年 · ${sign}座</div>
+    <div class="yi-ji">
+      <div class="yi"><b>宜</b><br>${fmtWords(yi,8)||'诸事不宜'}</div>
+      <div class="ji"><b>忌</b><br>${fmtWords(ji,8)||'百无禁忌'}</div>
     </div>
+    <div class="mini-detail" style="margin-top:6px">点击宜 / 忌词语可看大白话解释</div>
   </div>
 
-  <!-- 今天想吃什么（结合命理） -->
-  <div class="card" style="border-left:3px solid var(--accent)">
-    <h2>🍜 今天想吃什么</h2>
-    <div class="plain-text" id="foodBox" style="font-size:20px;text-align:center;padding:16px 10px;font-weight:600;color:var(--ink)">${todayFood}</div>
-    <div class="mini-detail" style="text-align:center;margin-top:4px">${foodTip}</div>
-    <div style="text-align:center;margin-top:10px"><button class="btn btn-ghost" onclick="rerollFood()">🎲 换一个</button></div>
-  </div>
-
-  <!-- 今日一卦（按钮触发，参与感） -->
+  <!-- ===== 今日一卦（梅花易数，互动趣味） ===== -->
   <div class="card">
-    <h2>📖 今日一卦（梅花易数）</h2>
+    <h2>📖 今日一卦</h2>
     <div style="text-align:center;padding:10px 0" id="rollGuaBtn">
       <button class="btn" id="rollBtn" onclick="rollGua()" style="font-size:14px">🎲 起一卦</button>
       <div class="mini-detail" style="margin-top:8px">每点一次都随机出不同的卦（纯娱乐参考）。</div>
@@ -959,70 +920,18 @@ function render(){
     <div id="guaBox"></div>
   </div>
 
-  <!-- 穿衣颜色 -->
-  <div class="card">
-    <h2>👕 今日幸运色</h2>
-    ${dressHtml}
+  <!-- ===== 今天想吃什么（轻松趣味） ===== -->
+  <div class="card" style="border-left:3px solid var(--accent)">
+    <h2>🍜 今天想吃什么</h2>
+    <div class="plain-text" id="foodBox" style="font-size:20px;text-align:center;padding:16px 10px;font-weight:600;color:var(--ink)">${todayFood}</div>
+    <div class="mini-detail" style="text-align:center;margin-top:4px">${foodTip}</div>
+    <div style="text-align:center;margin-top:10px"><button class="btn btn-ghost" onclick="rerollFood()">🎲 换一个</button></div>
   </div>
 
-  <!-- 今日日历（黄历详情） -->
-  <div class="card">
-    <h2>📅 ${todayStr}</h2>
-    <div class="lunar-line">${lunarStr} · ${shengXiao}年 · ${sign}座</div>
-    <div class="eight-char" style="justify-content:flex-start">今日八字 ${colorBazi(eightChar)}</div>
-    <div class="tags">
-      <span class="tag"><span class="yw" onclick="showWordTip(event,'值神')">值神</span> ${tianShen}</span><span class="tag"><span class="yw" onclick="showWordTip(event,'纳音')">纳音</span> ${naYin}</span>
-      <span class="tag"><span class="yw" onclick="showWordTip(event,'冲煞')">冲</span> ${chong}</span><span class="tag"><span class="yw" onclick="showWordTip(event,'喜神方位')">喜神</span> ${xiPos}</span>
-      <span class="tag ${lyEx[1]==='吉'?'ly-ji':lyEx[1]==='凶'?'ly-xiong':'ly-ping'}"><span class="yw" onclick="showWordTip(event,'六曜')">六曜</span> ${liuYao}（${lyEx[0]}）</span>
-    </div>
-    <div class="yi-ji">
-      <div class="yi"><b>宜</b><br>${fmtWords(yi,8)||'诸事不宜'}</div>
-      <div class="ji"><b>忌</b><br>${fmtWords(ji,8)||'百无禁忌'}</div>
-    </div>
-    <div class="mini-detail" style="margin-top:6px">点击宜/忌词语可查看白话解释</div>
-    <div class="kv" style="margin-top:10px">
-      <div><b>彭祖百忌：</b>${pengZu}</div>
-      <div><b>吉神宜趋：</b>${jiShen.join('、')}</div>
-      <div><b>凶煞宜忌：</b>${xiongSha.join('、')}</div>
-    </div>
-  </div>
-
-  <!-- 四维宜忌（日历下方） -->
-  <div class="card">
-    <h2>⏰ 四维宜忌（年 / 月 / 日 / 时）</h2>
-    ${dims.year ? `<div class="dims">
-      <div class="dim"><div class="d-title">年 · ${dims.year.gz}（${dims.year.w}）</div><div class="d-body">${dims.year.ev.delta>=8?`<span class="good-t">${dims.year.ev.rel}</span>`:(dims.year.ev.delta<=-8?`<span class="bad-t">${dims.year.ev.rel}</span>`:`<span class="mid-t">${dims.year.ev.rel}</span>`)}<br>${dims.year.sx?`<span class="${dims.year.sx[2]}">${dims.year.sx[0]}：${dims.year.sx[1]}</span>`:''}</div></div>
-      <div class="dim"><div class="d-title">月 · ${dims.month.gz}（${dims.month.w}）</div><div class="d-body">${dims.month.ev.delta>=8?`<span class="good-t">${dims.month.ev.rel}</span>`:(dims.month.ev.delta<=-8?`<span class="bad-t">${dims.month.ev.rel}</span>`:`<span class="mid-t">${dims.month.ev.rel}</span>`)}<br>本月五行 ${dims.month.ev.delta>=8?'顺你，利推进大事':(dims.month.ev.delta<=-8?'逆你，宜稳中求进':'中平')}</div></div>
-      <div class="dim"><div class="d-title">日 · ${dims.day.w}日</div><div class="d-body">${dims.day.ev.delta>=8?`<span class="good-t">${dims.day.ev.rel}</span>`:(dims.day.ev.delta<=-8?`<span class="bad-t">${dims.day.ev.rel}</span>`:`<span class="mid-t">${dims.day.ev.rel}</span>`)}<br>黄历：宜${fmtWords(yi,4)}｜忌${fmtWords(ji,4)}</div></div>
-      <div class="dim"><div class="d-title">时 · ${dims.hour.gz}时</div><div class="d-body">${dims.hour.ev.delta>=8?`<span class="good-t">${dims.hour.ev.rel}</span>`:(dims.hour.ev.delta<=-8?`<span class="bad-t">${dims.hour.ev.rel}</span>`:`<span class="mid-t">${dims.hour.ev.rel}</span>`)}<br>此时候宜：${fmtWords(dims.hour.timeYi,6)}｜忌：${fmtWords(dims.hour.timeJi,4)}</div></div>
-    </div>` : `<div class="mini-detail">填出生信息后，这里按年/月/日/时干支与你的用神生克，给出四维宜忌。</div>`}
-    ${hasBirth&&ys?`<div class="mini-detail" style="margin-top:8px">依据：各维度干支五行 vs 你的<span class="yw" onclick="showWordTip(event,'喜用神')">喜用神</span>【${ys.xi.join('、')}】；黄历「时」维度另有传统时辰宜忌（${th}点=${['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'][Math.floor(th/2)]}时）。</div>`:''}
-  </div>
-
-  <!-- 宜忌融合对照（个人修正，放进「今日」） -->
-  <div class="card">
-    <h2>🧭 宜忌融合对照（多体系同看一件事）</h2>
-    <div class="kv">
-      <div style="margin-bottom:8px"><b>👤 个人修正（黄历 vs 你的命盘）：</b></div>
-      ${personalHtml}
-    </div>
-    <div class="kv" style="margin-top:8px">
-      <div><b>黄历角度：</b>宜 ${fmtWords(yi,4)}｜忌 ${fmtWords(ji,4)} <span class="mini-detail">（随推算日期变）</span></div>
-      <div><b>星座角度（${userSign}·${uSig.element}）：</b>今日${wx(GAN[L.getDayGan()])}日对你「<span class="${sd.cls}">${sd.rel}</span>」——${sd.tip}；宜 ${uSig.like.split('、').slice(0,3).join('、')}｜慎 ${uSig.avoid}</div>
-      ${hasBirth&&ys?`<div><b>八字角度：</b>日主${bazi.me}，喜【${ys.xi.map(wx).join('、')}】忌【${ys.ji.map(wx).join('、')}】；当日【${wx(GAN[L.getDayGan()])}】${evalAgainstYongShen(GAN[L.getDayGan()],ys).rel} → ${evalAgainstYongShen(GAN[L.getDayGan()],ys).delta>=8?'做事得助，宜推进':(evalAgainstYongShen(GAN[L.getDayGan()],ys).delta<=-8?'宜养精蓄锐，稳字当头':'中性日，按黄历行事')} <span class="mini-detail">（随你的八字+日期变）</span></div>`:''}
-      <div><b>周易角度：</b>点上方「今日一卦」🎲 起卦后，卦象会同步显示在解读里</div>
-      <div class="mini-detail" style="margin-top:6px">三个角度各自的变量：黄历随<b>日期</b>、星座随<b>当日五行</b>、八字随<b>你的信息+日期</b>——换日期或换人，结果都会变。</div>
-    </div>
-    <details><summary>看各体系独立建议</summary>
-      <div class="mini-detail" style="margin-top:8px">
-        <b>黄历：</b>${fmtWords(yi,10)}｜忌 ${fmtWords(ji,10)}<br>
-        <b>星座（${sign}）：</b>${sig.today[0]}；${sig.today[1]}<br>
-        ${hasBirth&&ys?`<b>八字：</b>${ys.desc}；五行 ${Object.entries(bazi.wuxing).map(([k,v])=>`${k}${v}`).join('·')}`:''}
-      </div>
-    </details>
+  <div style="text-align:center;margin:16px 0 4px">
+    <button class="btn btn-go rerun" onclick="var f=document.querySelector('.form-wrap'); if(f){f.scrollIntoView({behavior:'smooth'});}">↑ 改信息 / 换个日期再算</button>
   </div>
   </div>
-  </div><!-- /todayDetail -->
   <div class="tab-panel" data-tab="ming">
   <div class="card">
     <h2>🔮 我的八字 ${hasBirth?'('+y+'-'+m+'-'+d+(h>=0?' '+['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'][h/2]+'时':' 时辰未知')+')':''}</h2>
@@ -1059,31 +968,6 @@ function render(){
   </div>
 
   </div>
-  </div>
-  <div class="tab-panel" data-tab="me">
-  <div class="card">
-    <h2>👤 我的档案</h2>
-    <div class="kv">
-      <div><b>出生：</b>${hasBirth?`${y}年${m}月${d}日${h>=0?' · '+['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'][h/2]+'时':' · 时辰未知'} · ${gender===1?'男':gender===0?'女':'—'}`:'（未填）'}</div>
-      <div><b>生肖：</b>${hasBirth?(()=>{try{return Solar.fromYmdHms(y,m,d,h>=0?h:12,0,0).getLunar().getYearShengXiao();}catch(e){return shengXiao;}})():shengXiao}${hasBirth?'（本命）':'（当年）'}</div>
-      <div><b>星座：</b>${hasBirth?(()=>{try{return Solar.fromYmdHms(y,m,d,h>=0?h:12,0,0).getXingZuo();}catch(e){return sign;}})():sign}座 · ${hasBirth?uSig.element:sig.element}象（五行${ELEM_TO_WUXING[hasBirth?uSig.element:sig.element]}）</div>
-      <div><b>幸运色：</b>${dressHtml}</div>
-      <div><b>出生地：</b>${regionTxt||'（未选）'}</div>
-      <div><b>推算坐标：</b>${lat!=null&&lng!=null?`${lat.toFixed(2)}°, ${lng.toFixed(2)}° · UTC${tz>=0?'+':''}${tz}`:'（未填）'}</div>
-      <div><b>推算日期：</b>${target} ${targetTime}</div>
-      ${hasBirth&&bazi?`
-      <div style="margin-top:6px"><b>八字：</b>${colorBazi(bazi.str)}</div>
-      <div style="margin-top:6px"><b>日主：</b>${bazi.me}（${ys.strong?'身强':'身弱'}）</div>
-      <div><b>喜用神：</b>${ys.xi.map(wx).join('、')}　<b>忌神：</b>${ys.ji.map(wx).join('、')}</div>
-      ${daYun?`<div><b>当前大运：</b>${colorGZ(daYun.gz)}（${daYun.startAge}岁起）· ${daYun.rel}</div>`:''}
-      ${chengGu?`<div><b>称骨：</b>${chengGu.cn}</div>`:''}
-      `:''}
-    </div>
-    <div class="mini-detail" style="margin-top:10px">填了出生信息的项目按你的数据算，没填的按今天通用数据。</div>
-  </div>
-  </div>
-  <div style="text-align:center;margin:16px 0 4px">
-    <button class="btn btn-go rerun" onclick="var f=document.querySelector('.form-wrap'); if(f){f.scrollIntoView({behavior:'smooth'});}">↑ 改信息 / 换个日期再算</button>
   </div>
   `;
   app.innerHTML = deEmoji(__H);
@@ -1351,14 +1235,6 @@ function dayGua(dateStr){
   return `<div class="th-gua-in"><span class="th-gua-label">📿 今日卦</span> <span class="th-gua-name">${guaSvg(down,up,moving)} ${base[0]}</span> <span class="th-gua-jx ${guaGood?'good-t':guaBad?'bad-t':'mid-t'}">${jx}</span> <span class="th-gua-desc">${base[1].split('，')[0]}</span></div>`;
 }
 
-/* 展开 / 收起完整今日 */
-function toggleTodayDetail(){
-  const el=document.getElementById('todayDetail');
-  if(!el) return;
-  const hidden = el.classList.toggle('hidden');
-  const btn=document.querySelector('.th-more');
-  if(btn) btn.textContent = hidden ? '📂 展开完整今日（日历 / 四维 / 融合对照）' : '📁 收起完整今日';
-}
 
 function rollGua(){
   // 随机起卦：上卦/下卦/动爻 全随机（每次点击都不同，供娱乐参考）
