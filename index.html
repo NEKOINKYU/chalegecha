@@ -388,7 +388,7 @@
   <div class="orb orb-3"></div>
   <div class="intro-inner fade-in-soft">
     <div class="hero-kicker">每日宜忌 · 刚刚好的小指引</div>
-    <h1 class="hero-title title-enter" role="button" tabindex="0" aria-label="进入测算" onclick="agreeAndEnter()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();agreeAndEnter()}">查了个查</h1>
+    <h1 class="hero-title title-enter" role="button" tabindex="0" aria-label="进入测算" onclick="enterApp()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();enterApp()}">查了个查</h1>
     <p class="hero-tag">八字用神 × 星盘 × 黄历 × 周易，每天给你一点刚刚好的小指引。</p>
     <p class="hero-enter-hint">👆 点击「查了个查」进入下一页</p>
     <div id="introCards"></div>
@@ -1658,9 +1658,6 @@ function saveBirth(){
 })();
 
 /* ========== 首页 ↔ 正文 切换 ========== */
-function agreeAndEnter(){
-  enterApp();
-}
 function enterApp(){
   const intro=document.getElementById('intro');
   const main=document.getElementById('main');
