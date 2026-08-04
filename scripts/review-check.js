@@ -5,6 +5,7 @@
  *   1) 语法关   node --check data.js + 内联 JS
  *   2) 实跑关   jsdom 加载页面、注入出生信息、实跑 render，捕获白屏/运行时崩溃（D1 API误用 / D3 闭包 / D4 未实跑）
  *   3) 字典键关 前瞻校验 ZODIAC_SUMMARY / ZODIAC_FORTUNE 键必须 = getSign() 短名集（D2 字典键不一致）
+ *              + GUA_SIMPLE 键必须 = GUA64 卦名全集（D2 类：起卦白话说错/为空）
  *   4) 人工 review：脚本不管，留给人
  * 退出码 0=通过, 1=有缺陷（pre-commit 钩子据此拦截）
  */
@@ -55,7 +56,29 @@ function zodiacKeyCheck() {
   }
 }
 
-// ---------- 3. 实跑渲染关 ----------
+// ---------- 3. 字典键一致性关 (D2，起卦) ----------
+function guaKeyCheck() {
+  const src = fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8');
+  const gua64 = [...src.matchAll(/'(\d\d)'\s*:\s*\['([^']+)'/g)].map(m => m[2]); // GUA64 卦名
+  if (!gua64.length) { errors.push('[D2] 未解析到 GUA64 卦名'); return; }
+  const m = src.match(/GUA_SIMPLE\s*:\s*\{([\s\S]*?)\n\};/);
+  if (!m) { errors.push('[D2] 未找到 GUA_SIMPLE 字典'); return; }
+  const keys = [...m[1].matchAll(/'([^']+)'\s*:/g)].map(x => x[1]);
+  const set64 = new Set(gua64), setK = new Set(keys);
+  const bad = [...setK].filter(k => !set64.has(k));
+  const miss = [...set64].filter(k => !setK.has(k));
+  if (bad.length) errors.push(`[D2] GUA_SIMPLE 有 ${bad.length} 个键不在 GUA64: ${bad.slice(0,8).join(', ')}${bad.length>8?'…':''}`);
+  if (miss.length) errors.push(`[D2] GUA_SIMPLE 缺 ${miss.length} 个卦: ${miss.slice(0,8).join(', ')}${miss.length>8?'…':''}`);
+  // 每项须含 yj/sx/aq/sy/xw 五字段
+  const rows = [...m[1].matchAll(/'([^']+)'\s*:\s*\{([^}]*)\}/g)];
+  for (const r of rows) {
+    const need = ['yj','sx','aq','sy','xw'];
+    const lack = need.filter(f => !new RegExp('\\b'+f+':').test(r[2]));
+    if (lack.length) errors.push(`[D2] GUA_SIMPLE['${r[1]}'] 缺字段: ${lack.join(',')}`);
+  }
+}
+
+// ---------- 4. 实跑渲染关 ----------
 function loadDom() {
   let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   html = html.replace(/<script[\s\S]*?<\/script>/g, ''); // 去掉所有 script，手动有序 eval
@@ -118,6 +141,14 @@ function checkScenario(name, birth) {
       try { if (window.switchFortune) window.switchFortune('week'); }
       catch (e) { errors.push(`[D3] 场景「${name}」switchFortune 闭包崩溃: ${e.message}`); }
       if (!/今日|黄历/.test(txt)) errors.push(`[marker] 场景「${name}」未渲染今日模块`);
+      // 起卦运行时冒烟：rollGua 不得抛错，且 GUA_SIMPLE 解析须渲染「意境」
+      try {
+        if (window.rollGua) {
+          window.rollGua();
+          const gtxt = (window.document.getElementById('guaBox') || {}).textContent || '';
+          if (!/意境/.test(gtxt)) errors.push(`[D2/运行时] 场景「${name}」rollGua 未渲染意境(可能 GUA_SIMPLE 键不匹配或 rollGua 异常)`);
+        }
+      } catch (e) { errors.push(`[D1] 场景「${name}」rollGua 抛异常: ${e.message}`); }
       res();
     }, 700);
   });
@@ -126,6 +157,7 @@ function checkScenario(name, birth) {
 (async () => {
   syntaxCheck();
   zodiacKeyCheck();
+  guaKeyCheck();
   // 三场景覆盖：用户生日(双鱼,完整) / 原 bug 星座(巨蟹,完整) / 仅月日
   await checkScenario('双鱼-完整', { y: 2002, m: 2, d: 19, h: 12, gender: 1, lat: 30.57, lng: 104.07, tz: 8 });
   await checkScenario('巨蟹-完整', { y: 1990, m: 7, d: 1, h: 10, gender: 0, lat: 31.23, lng: 121.47, tz: 8 });

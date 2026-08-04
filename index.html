@@ -142,6 +142,12 @@
   .gua-box .g-name{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:2px}
   .gua-box .g-desc{font-size:11.5px;color:var(--ink-2);margin-top:6px;line-height:1.7;max-width:190px}
   .gua-arrow{font-size:22px;color:var(--accent)}
+  /* 起卦白话解析卡：一行一 key，一目了然 */
+  .gua-simple{margin-top:12px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface-2)}
+  .gs-row{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line)}
+  .gs-row:last-child{border-bottom:none}
+  .gs-k{flex:none;min-width:42px;text-align:center;font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-soft);border:1px solid var(--line);border-radius:999px;padding:2px 8px;line-height:1.5}
+  .gs-v{flex:1;font-size:13px;color:var(--ink);line-height:1.6}
   .liuyao-tag{font-size:12px;display:inline-block;padding:3px 12px;border-radius:999px;margin:2px 4px 2px 0}
   .ly-ji{background:color-mix(in srgb,var(--good) 16%,var(--card));color:var(--good)}
   .ly-xiong{background:color-mix(in srgb,var(--bad) 16%,var(--card));color:var(--bad)}
@@ -547,6 +553,8 @@ const ZHI_ORDER = {'子':1,'丑':2,'寅':3,'卯':4,'辰':5,'巳':6,'午':7,'未'
 /* 八卦二进制（从下往上，阳1阴0）→ 数字（乾1兑2离3震4巽5坎6艮7坤8） */
 const GUA8_BITS = {'111':'1','110':'2','101':'3','100':'4','011':'5','010':'6','001':'7','000':'8'};
 const GUA8_BITS_REV = {'1':'111','2':'110','3':'101','4':'100','5':'011','6':'010','7':'001','8':'000'};
+/* 八卦五行：乾兑金，离火，震巽木，坎水，艮坤土 */
+const GUA8_WX = {1:'金',2:'金',3:'火',4:'木',5:'木',6:'水',7:'土',8:'土'};
 function guaCast(ganzhi, month, day, hourZhi){
   const yearZhi = ganzhi.charAt(1);          // 年支
   const yN = ZHI_ORDER[yearZhi]||0;
@@ -886,6 +894,7 @@ function render(){
     <button class="tab-btn active" data-tab="today" onclick="switchTab('today')">${icon('today')}今日</button>
     ${anyBirth?`<button class="tab-btn" data-tab="ming" onclick="switchTab('ming')">${icon('ming')}命盘</button>`:''}
     ${anyBirth?`<button class="tab-btn" data-tab="xing" onclick="switchTab('xing')">${icon('xing')}星盘</button>`:''}
+    <button class="tab-btn" data-tab="gua" onclick="switchTab('gua')">📿 起卦</button>
   </nav>
   <div class="tab-panel active" data-tab="today">
 
@@ -912,12 +921,6 @@ function render(){
     ${canBazi&&ys?`<div class="th-row" style="font-size:12px"><span class="yiji-mini" style="background:var(--accent-soft);color:var(--accent);border-color:var(--accent)">个人历</span><span class="mini-detail">今日${wx(GAN[L.getDayGan()])}日对你「${evalAgainstYongShen(GAN[L.getDayGan()],ys).rel||'中性'}」</span></div>`:''}
 
     <div class="th-row"><span class="th-label">幸运色</span>${dressHtml}</div>
-
-    <div style="margin-top:12px;text-align:center;padding:10px 0 2px;border-top:1px dashed var(--line)">
-      <button class="btn" id="rollBtn" onclick="rollGua()" style="font-size:14px">🎲 起一卦</button>
-      <div class="mini-detail" style="margin-top:8px">每点一次都随机出不同的卦（纯娱乐参考）。</div>
-      <div id="guaBox"></div>
-    </div>
 
     <div id="quoteText" class="th-quote"></div>
   </div>
@@ -975,6 +978,18 @@ function render(){
   </div>
   </div>
   `:''}
+
+  <!-- ===== 起卦（独立模块，不填出生信息也能用） ===== -->
+  <div class="tab-panel" data-tab="gua">
+    <div class="card">
+      <h2>📿 起一卦</h2>
+      <p class="mini-detail">随机起卦，每点一次都不同。看这卦的<b>意境</b>与<b>属性</b>，再给爱情 / 事业 / 寻物一句小提示（纯娱乐参考，别较真）。</p>
+      <div style="text-align:center;margin:14px 0">
+        <button class="btn" id="rollBtn" onclick="rollGua()" style="font-size:15px">🎲 起一卦</button>
+      </div>
+      <div id="guaBox"></div>
+    </div>
+  </div>
   `;
   app.innerHTML = deEmoji(__H);
 
@@ -1255,11 +1270,13 @@ function rollGua(){
   const guaGood = /吉|宜|利|升|成|泰|益|大有|丰|谦|复|同人/.test(g.baseDesc);
   const guaBad = /凶|慎|忌|困|讼|蹇|剥|否|明夷|难|无妄/.test(g.baseDesc);
   const jx = guaGood?'偏吉':guaBad?'偏谨慎':'中平';
+  const sim = (D.GUA_SIMPLE && D.GUA_SIMPLE[g.baseName]) ? D.GUA_SIMPLE[g.baseName] : null;
   const box = document.getElementById('guaBox');
   if(box) box.innerHTML = deEmoji(`
     <div class="gua-display">
       <div class="gua-box">
         <div class="g-name">${guaSvg(g.down,g.up,g.moving)} ${g.baseName}</div>
+        <div class="g-jx ${guaGood?'good-t':guaBad?'bad-t':'mid-t'}">${jx}</div>
         <div class="g-desc">${g.baseDesc}</div>
         <div class="mini-detail" style="margin-top:4px">动爻：第${g.moving}爻（红色）</div>
       </div>
@@ -1267,14 +1284,20 @@ function rollGua(){
       <div class="gua-box">
         <div class="g-name">${g.bianName}</div>
         <div class="g-desc">${g.bianDesc}</div>
-        <div class="mini-detail" style="margin-top:4px">变卦（${g.moving}爻动而变）</div>
+        <div class="mini-detail" style="margin-top:4px">变卦（第${g.moving}爻动而变）</div>
       </div>`:''}
     </div>
+    ${sim?`
+    <div class="gua-simple">
+      ${sim.yj?`<div class="gs-row"><span class="gs-k">意境</span><span class="gs-v">${sim.yj}</span></div>`:''}
+      ${sim.sx?`<div class="gs-row"><span class="gs-k">属性</span><span class="gs-v">${sim.sx}</span></div>`:''}
+      ${sim.aq?`<div class="gs-row"><span class="gs-k">爱情</span><span class="gs-v">${sim.aq}</span></div>`:''}
+      ${sim.sy?`<div class="gs-row"><span class="gs-k">事业</span><span class="gs-v">${sim.sy}</span></div>`:''}
+      ${sim.xw?`<div class="gs-row"><span class="gs-k">寻物</span><span class="gs-v">${sim.xw}</span></div>`:''}
+    </div>`:`<div class="mini-detail" style="margin-top:8px">（该卦暂无白话解析）</div>`}
     <div class="mini-detail" style="margin-top:8px">⚡ 本次为<b>随机起卦</b>（每点一次都不一样，纯娱乐参考）。</div>`);
   const btn = document.getElementById('rollBtn');
   if(btn) btn.textContent = '🎲 再起一卦';
-  const gl = document.getElementById('guaLine');
-  if(gl) gl.innerHTML = `卦象 ${guaSvg(g.down,g.up,g.moving)} <b>「${g.baseName}」</b>${jx}——${g.baseDesc.split('，')[0]}`;
 }
 
 /* ============ 推算触发：填信息 → 点按钮才算 ============ */
