@@ -1,0 +1,34 @@
+#!/bin/sh
+# lunar-app pre-commit 校验钩子（鹰眼标准）
+# 每次 commit 自动跑 scripts/review-check.js：语法 / 实跑渲染 / 字典键一致性
+# 非零退出即阻断提交，把缺陷拦在进库之前。
+# 紧急跳过：git commit --no-verify
+
+NODE="/Users/nekoinkyu/.workbuddy/binaries/node/versions/22.22.2/bin/node"
+NODE_PATH="/Users/nekoinkyu/.workbuddy/binaries/node/workspace/node_modules"
+ROOT="$(git rev-parse --show-toplevel)"
+CHECK="$ROOT/scripts/review-check.js"
+
+if [ ! -x "$NODE" ]; then
+  echo "⚠️ pre-commit: 未找到 managed node ($NODE)，跳过 review-check。"
+  echo "   如需强制提交：git commit --no-verify"
+  exit 0
+fi
+
+if [ ! -f "$CHECK" ]; then
+  echo "⚠️ pre-commit: 未找到 $CHECK，跳过检查。"
+  exit 0
+fi
+
+REVIEW_ROOT="$ROOT" NODE_PATH="$NODE_PATH" "$NODE" "$CHECK"
+code=$?
+
+if [ $code -ne 0 ]; then
+  echo ""
+  echo "❌ pre-commit 校验未通过，提交已被阻断。"
+  echo "   修复上面列出的缺陷后重新 git commit；或 git commit --no-verify 强制跳过（不推荐）。"
+  exit 1
+fi
+
+echo "✅ pre-commit review-check 通过"
+exit 0

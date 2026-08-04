@@ -1,0 +1,142 @@
+#!/usr/bin/env node
+/**
+ * lunar-app 提交前校验（鹰眼标准）
+ * 覆盖「四关」：
+ *   1) 语法关   node --check data.js + 内联 JS
+ *   2) 实跑关   jsdom 加载页面、注入出生信息、实跑 render，捕获白屏/运行时崩溃（D1 API误用 / D3 闭包 / D4 未实跑）
+ *   3) 字典键关 前瞻校验 ZODIAC_SUMMARY / ZODIAC_FORTUNE 键必须 = getSign() 短名集（D2 字典键不一致）
+ *   4) 人工 review：脚本不管，留给人
+ * 退出码 0=通过, 1=有缺陷（pre-commit 钩子据此拦截）
+ */
+const fs = require('fs');
+const path = require('path');
+const cp = require('child_process');
+
+function loadJsdom() {
+  const cands = [
+    'jsdom',
+    '/Users/nekoinkyu/.workbuddy/binaries/node/workspace/node_modules/jsdom',
+  ];
+  for (const c of cands) { try { return require(c); } catch (e) {} }
+  throw new Error('jsdom 未找到，请设置 NODE_PATH 或安装 jsdom');
+}
+const { JSDOM, VirtualConsole } = loadJsdom();
+
+// ROOT 默认取项目根(lunar-app)；可通过 REVIEW_ROOT 指向副本做有效性验证（不碰仓库本体）
+const ROOT = process.env.REVIEW_ROOT ? path.resolve(process.env.REVIEW_ROOT) : path.resolve(__dirname, '..');
+const errors = [];
+
+// ---------- 1. 语法关 ----------
+function syntaxCheck() {
+  const dataFile = path.join(ROOT, 'data.js');
+  try { cp.execSync(`node --check "${dataFile}"`, { stdio: 'pipe' }); }
+  catch (e) { errors.push('[语法] data.js: ' + (e.stderr?.toString() || e.message)); }
+
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const inline = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+  const tmp = '/tmp/_inline_check.js';
+  fs.writeFileSync(tmp, inline.join('\n'));
+  try { cp.execSync(`node --check "${tmp}"`, { stdio: 'pipe' }); }
+  catch (e) { errors.push('[语法] 内联JS: ' + (e.stderr?.toString() || e.message)); }
+}
+
+// ---------- 2. 字典键一致性关 (D2) ----------
+function zodiacKeyCheck() {
+  const src = fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8');
+  const short = ['水瓶', '双鱼', '白羊', '金牛', '双子', '巨蟹', '狮子', '处女', '天秤', '天蝎', '射手', '摩羯'];
+  for (const name of ['ZODIAC_SUMMARY', 'ZODIAC_FORTUNE']) {
+    const m = src.match(new RegExp(name + '\\s*=\\s*\\{([\\s\\S]*?)\\n\\s*\\};'));
+    if (!m) continue; // 字典不存在则跳过（v1.82.03 无这些字典）
+    const keys = [...m[1].matchAll(/^\s*['"]?([^'":\s]+)['"]?\s*:/gm)].map(x => x[1]);
+    const bad = keys.filter(k => !short.includes(k));
+    if (bad.length) errors.push(`[D2] ${name} 键与 getSign 短名不一致: ${bad.join(', ')}（应用短名如'巨蟹'而非'巨蟹座'）`);
+    const miss = short.filter(s => !keys.includes(s));
+    if (miss.length) errors.push(`[D2] ${name} 缺星座键: ${miss.join(', ')}`);
+  }
+}
+
+// ---------- 3. 实跑渲染关 ----------
+function loadDom() {
+  let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  html = html.replace(/<script[\s\S]*?<\/script>/g, ''); // 去掉所有 script，手动有序 eval
+  const vc = new VirtualConsole();
+  vc.on('jsdomError', e => {
+    const msg = e.message || '';
+    if (/ENOTFOUND|copilot\.tencent|Failed to load|Network/i.test(msg)) return; // 忽略网络噪音
+    errors.push('[jsdom] ' + (e.detail?.stack || msg));
+  });
+  const dom = new JSDOM(html, {
+    runScripts: 'outside-only',
+    pretendToBeVisual: true,
+    url: 'http://localhost/',
+    virtualConsole: vc,
+  });
+  const { window } = dom;
+  window.requestAnimationFrame = cb => setTimeout(() => cb(Date.now()), 0);
+  window.cancelAnimationFrame = id => clearTimeout(id);
+
+  const dataJs = fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8');
+  const lunarJs = fs.readFileSync(path.join(ROOT, 'lunar.js'), 'utf8');
+  const celJs = fs.readFileSync(path.join(ROOT, 'lib/celestine.js'), 'utf8');
+  const inline = [...fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')
+    .matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+  try {
+    window.eval(dataJs);
+    window.eval(lunarJs);
+    window.eval(celJs);
+    for (const s of inline) window.eval(s);
+  } catch (e) { errors.push('[eval] ' + (e.stack || e.message)); }
+  return window;
+}
+
+function fillAndRun(window, birth) {
+  const set = (id, val) => { const el = window.document.getElementById(id); if (el) el.value = (val ?? ''); };
+  set('birthYear', birth.y);
+  set('birthMonth', birth.m);
+  set('birthDay', birth.d);
+  set('birthHour', birth.h);
+  set('birthGender', birth.gender);
+  set('birthLat', birth.lat);
+  set('birthLng', birth.lng);
+  set('birthTz', birth.tz ?? 8);
+  try { window.runCalc(); }
+  catch (e) { errors.push('[runCalc] ' + (e.stack || e.message)); }
+}
+
+function checkScenario(name, birth) {
+  const window = loadDom();
+  fillAndRun(window, birth);
+  return new Promise(res => {
+    setTimeout(() => {
+      const app = window.document.getElementById('app');
+      const txt = app ? app.textContent : '';
+      if (/推算出错了/.test(txt)) {
+        const sub = (txt.match(/推算出错了([\s\S]*?)$/) || [])[1] || '';
+        errors.push(`[D1/D4] 场景「${name}」render 抛异常(白屏): ${sub.trim().slice(0, 120)}`);
+      }
+      // D3: 模拟点击运势 tab（未来重做后存在，提前拦闭包崩溃）
+      try { if (window.switchFortune) window.switchFortune('week'); }
+      catch (e) { errors.push(`[D3] 场景「${name}」switchFortune 闭包崩溃: ${e.message}`); }
+      if (!/今日|黄历/.test(txt)) errors.push(`[marker] 场景「${name}」未渲染今日模块`);
+      res();
+    }, 700);
+  });
+}
+
+(async () => {
+  syntaxCheck();
+  zodiacKeyCheck();
+  // 三场景覆盖：用户生日(双鱼,完整) / 原 bug 星座(巨蟹,完整) / 仅月日
+  await checkScenario('双鱼-完整', { y: 2002, m: 2, d: 19, h: 12, gender: 1, lat: 30.57, lng: 104.07, tz: 8 });
+  await checkScenario('巨蟹-完整', { y: 1990, m: 7, d: 1, h: 10, gender: 0, lat: 31.23, lng: 121.47, tz: 8 });
+  await checkScenario('仅月日', { m: 5, d: 15 });
+
+  if (errors.length) {
+    console.log(`❌ review-check 未通过，发现 ${errors.length} 处缺陷：`);
+    errors.forEach(e => console.log('  - ' + e));
+    process.exit(1);
+  } else {
+    console.log('✅ review-check 通过：语法 / 实跑渲染 / 字典键一致性 均无缺陷');
+    process.exit(0);
+  }
+})();
