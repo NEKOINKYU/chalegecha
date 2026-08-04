@@ -265,8 +265,6 @@
   .score-modal-body{font-size:13.5px;line-height:1.8;color:var(--ink-2)}
   .score-modal-body b{color:var(--accent)}
   .th-label{font-size:12px;color:var(--sub);flex-shrink:0}
-  .yiji-mini{font-size:12px;font-weight:700;margin-right:2px}
-  .yiji-mini.y{color:var(--good)} .yiji-mini.n{color:var(--bad)}
   .th-gua{margin-top:4px}
   .th-quote{margin-top:10px;font-style:italic;color:var(--sub);font-size:12.5px;text-align:center;line-height:1.7}
   .th-gua-in{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;background:var(--accent-soft);border:1px solid var(--line);border-radius:12px;padding:9px 12px;animation:guaPulse 5s ease-in-out infinite}
@@ -943,8 +941,8 @@ function render(){
     </div>
 
     <div class="th-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-      <div><span class="yiji-mini y">宜</span>${fmtWords(pYJ.pYi,3)}</div>
-      <div><span class="yiji-mini n">忌</span>${fmtWords(pYJ.pJi,3)}</div>
+      <div class="th-yi"><span class="th-yj-lab y">宜</span>${fmtWords(pYJ.pYi,3)}</div>
+      <div class="th-ji"><span class="th-yj-lab n">忌</span>${fmtWords(pYJ.pJi,3)}</div>
     </div>
     <div class="mini-detail" style="margin-top:4px">点词语可看大白话解释</div>
 
