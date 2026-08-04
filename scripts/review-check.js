@@ -290,13 +290,15 @@ async function checkShenShaMeaning(name) {
   if (list.querySelector('b[onclick]')) errors.push(`[回归] ${name}: 神煞释义词仍带 onclick(冗余点击)`);
 }
 
-// 袁天罡称骨白话化回归：data.js 须有 baihua 对照表(条数==poems)，命盘须常驻渲染 .cg-baihua(原文诗体保留、白话替代「点击看批语」)
+// 袁天罡称骨白话化回归：data.js 须有 baihua 对照表(条数==poems)，命盘须常驻渲染 .cg-poem(原批语诗体) 与 .cg-baihua(白话)，两者并存
 function checkChengGuBaihua() {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const data = fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8');
   if (!/CHENG_GU\s*:\s*\{[\s\S]*baihua\s*:/.test(data)) errors.push('[回归] data.js CHENG_GU 缺少 baihua 白话对照表(称骨批语白话化丢失)');
   if (!html.includes('cg-baihua')) errors.push('[回归] 命盘称骨未渲染白话常驻块(.cg-baihua)');
+  if (!html.includes('cg-poem')) errors.push('[回归] 命盘称骨未渲染原批语常驻块(.cg-poem)——原批语被误删');
   if (!/CHENG_GU\.baihua\[chengGu\.cn\]/.test(html)) errors.push('[回归] 命盘称骨渲染未读取 CHENG_GU.baihua(白话未显示)');
+  if (!/chengGu\.poem/.test(html)) errors.push('[回归] 命盘称骨渲染未读取 chengGu.poem(原批语未显示)');
   const poems = (data.match(/poems\s*:\s*\{([\s\S]*?)\n  \}/) || [,''])[1];
   const baihua = (data.match(/baihua\s*:\s*\{([\s\S]*?)\n  \}/) || [,''])[1];
   const pCount = (poems.match(/'/g) || []).length / 2;
@@ -313,6 +315,10 @@ async function checkChengGuBaihuaRender(name) {
   if (!bh) { errors.push(`[回归] ${name}: 未渲染称骨白话常驻块(.cg-baihua)——白话不可见`); return; }
   const t = (bh.textContent || '').trim();
   if (t.length < 8) errors.push(`[回归] ${name}: 称骨白话内容过短(${t.length}字)，可能未渲染`);
+  const poem = app.querySelector('.cg-poem');
+  if (!poem) { errors.push(`[回归] ${name}: 未渲染原批语常驻块(.cg-poem)——原批语诗体丢失`); return; }
+  const pt = (poem.textContent || '').replace('原批语', '').trim();
+  if (pt.length < 8) errors.push(`[回归] ${name}: 原批语内容过短(${pt.length}字)，可能未渲染`);
 }
 
 (async () => {
