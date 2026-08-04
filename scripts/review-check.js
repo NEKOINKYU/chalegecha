@@ -200,8 +200,12 @@ function checkPeek(name) {
       if (/星盘/.test(txt)) errors.push(`[D5] 场景「${name}」首屏无出生信息却出现星盘`);
       try {
         if (window.rollGua) {
+          // 首屏起卦默认空状态：先验证有入口按钮，点击后才出心意（不再要求加载即出卦）
+          const btn = window.document.getElementById('introRollBtn');
+          if (!btn) errors.push(`[marker] 场景「${name}」首屏起卦入口按钮(introRollBtn)缺失`);
+          window.rollGua('introGuaBox');
           const gtxt = (window.document.getElementById('introGuaBox')||{}).textContent || '';
-          if (!/意境/.test(gtxt)) errors.push(`[D2/运行时] 场景「${name}」首屏起卦未渲染意境`);
+          if (!/意境/.test(gtxt)) errors.push(`[D2/运行时] 场景「${name}」首屏起卦点击后未渲染意境`);
         }
       } catch (e) { errors.push(`[D1] 场景「${name}」首屏起卦抛异常: ${e.message}`); }
       res();

@@ -259,6 +259,13 @@
   .th-gua-label{font-size:12px;color:var(--accent);font-weight:600}
   .th-gua-name{font-weight:700;color:var(--ink)}
   .th-gua-jx{font-size:12px;font-weight:600}
+  .bazi-line{font-size:12.5px;font-weight:700;color:var(--accent);margin:2px 0 6px;letter-spacing:.5px}
+  .lunar-line.hl{font-size:13px;font-weight:600;margin-top:0}
+  .th-yi,.th-ji{display:flex;align-items:baseline;gap:9px;font-size:13px;line-height:1.7;margin:3px 0}
+  .th-yj-lab{flex-shrink:0;font-weight:700;font-size:12px;padding:1px 8px;border-radius:6px;line-height:1.5}
+  .th-yj-lab.y{color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}
+  .th-yj-lab.n{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+  .gua-empty{font-size:13px;color:var(--sub);text-align:center;padding:18px 8px;line-height:1.8}
   .th-gua-desc{font-size:12px;color:var(--ink-2)}
   .th-more{margin-top:14px;width:100%}
 
@@ -1153,14 +1160,18 @@ function personalAdjust(yi, ji, ys){
 function buildPlain(verdict, total, yi, ji, ev, sig, dressName, daYun, smallThing){
   const jx = verdict.split('·')[0].trim();
   let s = `今天整体<b>${jx}</b>（综合 ${total} 分）。`;
-  // 适合做什么（宜忌词可点击释义）
+  // 适合做什么（宜忌词可点击释义；传空数组则 fmtWords 返回「无」，此处跳过避免空白【无】）
   const yiWords = fmtWords(yi,3);
-  if(ev.delta>=8) s += `今日五行正合你的用神，做事得助——适合推进【${yiWords}】这类事。`;
-  else if(ev.delta<=-8) s += `今日五行与你相克，宜守不宜进；真要做事，可挑【${yiWords}】中轻缓的来。`;
-  else s += `今天五行中平，按黄历【${yiWords}】行事即可。`;
+  const yiOk = yiWords && yiWords!=='无';
+  if(ev.delta>=8) s += yiOk ? `今日五行正合你的用神，做事得助——适合推进【${yiWords}】这类事。` : `今日五行正合你的用神，做事得助。`;
+  else if(ev.delta<=-8) s += yiOk ? `今日五行与你相克，宜守不宜进；真要做事，可挑【${yiWords}】中轻缓的来。` : `今日五行与你相克，宜守不宜进。`;
+  else s += yiOk ? `今天五行中平，按黄历【${yiWords}】行事即可。` : `今天五行中平。`;
   // 注意 + 穿衣
   const jiWords = fmtWords(ji,3);
-  s += `今天要避开【${jiWords}】${daYun?`；当前大运${colorGZ(daYun.gz)}${daYun.rel}`:''}。穿衣宜${dressName}色系。`;
+  const jiOk = jiWords && jiWords!=='无';
+  if(jiOk) s += `今天要避开【${jiWords}】${daYun?`；当前大运${colorGZ(daYun.gz)}${daYun.rel}`:''}。`;
+  else if(daYun) s += `当前大运${colorGZ(daYun.gz)}${daYun.rel}。`;
+  s += `穿衣宜${dressName}色系。`;
   // 一件小事（治愈向）
   if(smallThing) s += `<br>✨ 今天可以做的一件小事：<b>${smallThing}</b>`;
   return s;
@@ -1311,6 +1322,8 @@ function renderHomePeek(){
     const solar = Solar.fromDate(t);
     const L = solar.getLunar();
     const lunarStr = L.toString();
+    const baziArr = L.getEightChar().toString().trim().split(/\s+/).filter(Boolean);
+    const baziStr = baziArr.length===4 ? `年 ${baziArr[0]}　月 ${baziArr[1]}　日 ${baziArr[2]}　时 ${baziArr[3]}` : baziArr.join(' ');
     const shengXiao = L.getYearShengXiao();
     const sign = getSign(solar.getMonth(), solar.getDay());
     const sig = D.SIGNS[sign];
@@ -1327,8 +1340,8 @@ function renderHomePeek(){
     else if(total>=45){verdict='小凶 · 宜守不宜攻';vClass='mid';}
     else {verdict='凶 · 谨慎行事，宜静不宜动';vClass='bad';}
     const smallThing = D.SMALL_THINGS[Math.floor(Math.random()*D.SMALL_THINGS.length)];
-    const plain = buildPlain(verdict, total, yi, ji, {delta:0}, sig, '中性', null, smallThing);
-    const dressHtml = `<div class="kv"><div><b>今日（${todayW}日）幸运色：</b>${todayC.name} ${todayC.colors.map(c=>`<span class="color-chip" style="background:${c}"></span>`).join('')}<br><span class="mini-detail">按今日黄历五行推荐；填了出生信息会换成更贴合你个人的色系。</span></div></div>`;
+    const plain = buildPlain(verdict, total, [], [], {delta:0}, sig, '中性', null, smallThing);
+    const dressHtml = `<div class="kv"><div><b>今日（${todayW}日）幸运色：</b>${todayC.name} ${todayC.colors.map(c=>`<span class="color-chip" style="background:${c}"></span>`).join('')}</div></div>`;
     // 今日吃什么（无个性化 → 按今日日干五行）
     const foodWX = todayW;
     curFoodWX = foodWX;
@@ -1338,7 +1351,8 @@ function renderHomePeek(){
     box.innerHTML = deEmoji(`
       <div class="card today-hero">
         <h2>📅 今日黄历</h2>
-        <div class="lunar-line">${lunarStr} · ${shengXiao}年 · ${sign}座</div>
+        <div class="bazi-line">今日八字　${baziStr}</div>
+        <div class="lunar-line hl">${lunarStr} · ${shengXiao}年 · ${sign}座</div>
         <div class="th-top">
           <div class="th-score"><div class="th-num">${total}</div><div class="th-unit">综合分</div></div>
           <div class="th-main">
@@ -1347,17 +1361,12 @@ function renderHomePeek(){
           </div>
         </div>
         <div class="th-plain">${plain}</div>
-        <div class="th-row">
-          <span class="yiji-mini y">✓ 宜</span>${fmtWords(yi,3)}
-          <span class="yiji-mini n" style="margin-left:10px">✕ 忌</span>${fmtWords(ji,3)}
-        </div>
-        <div class="mini-detail" style="margin-top:4px">点词语可看大白话解释</div>
+        <div class="th-yi"><span class="th-yj-lab y">宜</span>${fmtWords(yi,3)}</div>
+        <div class="th-ji"><span class="th-yj-lab n">忌</span>${fmtWords(ji,3)}</div>
         <div class="th-row"><span class="th-label">幸运色</span>${dressHtml}</div>
-        <div class="mini-detail" style="margin-top:6px">填出生信息后，这里会变成「个人历」，结合你的八字用神给出宜忌。</div>
-      </div>
-      <div class="card" style="border-left:3px solid var(--accent)">
+      </div>      <div class="card" style="border-left:3px solid var(--accent)">
         <h2>🍜 今天想吃什么</h2>
-        <div class="plain-text" id="introFoodBox" style="font-size:20px;text-align:center;padding:16px 10px;font-weight:600;color:var(--ink)">${todayFood}</div>
+        <div class="plain-text" id="introFoodBox" style="font-size:18px;text-align:center;padding:14px 10px;font-weight:600;color:var(--ink)">${todayFood}</div>
         <div class="mini-detail" style="text-align:center;margin-top:4px">${foodTip}</div>
         <div style="text-align:center;margin-top:10px"><button class="btn btn-ghost" onclick="rerollFood('introFoodBox')">🎲 换一个</button></div>
       </div>
@@ -1365,12 +1374,11 @@ function renderHomePeek(){
         <h2>📿 起一卦</h2>
         <p class="mini-detail">随机起卦，每点一次都不同。看这卦的<b>意境</b>与<b>属性</b>，再给爱情 / 事业 / 寻物一句小提示（纯娱乐参考，别较真）。</p>
         <div style="text-align:center;margin:14px 0">
-          <button class="btn" id="introRollBtn" onclick="rollGua('introGuaBox')" style="font-size:15px">🎲 再起一卦</button>
+          <button class="btn" id="introRollBtn" onclick="rollGua('introGuaBox')" style="font-size:15px">🎲 起一卦</button>
         </div>
-        <div id="introGuaBox"></div>
+        <div id="introGuaBox" class="gua-empty">点上方按钮，起一卦看看今日玄机 ☯</div>
       </div>
     `);
-    rollGua('introGuaBox');   // 首屏默认出一卦，一进来就能用
   }catch(err){
     box.innerHTML = `<div class="card"><div class="ph-title">今日内容加载失败</div><div class="ph-sub">${String((err && err.message) || err)}</div></div>`;
   }
