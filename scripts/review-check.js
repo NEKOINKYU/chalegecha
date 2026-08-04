@@ -143,22 +143,14 @@ function checkScenario(name, birth) {
       if (!/今日|黄历/.test(txt)) errors.push(`[marker] 场景「${name}」未渲染今日模块`);
       // 回归：带出生信息时「我的今日」应把宜忌修正直接并入「适合做/不适合做」，不得再单列「黄历忌「/黄历宜「」冗长说明
       if (/黄历忌「|黄历宜「/.test(txt)) errors.push(`[回归] 场景「${name}」仍渲染黄历宜忌修正冗长说明(应并入适合做/不适合做两行)`);
-      // 起卦运行时冒烟：rollGua 不得抛错，且 GUA_SIMPLE 解析须渲染「意境」
-      try {
-        if (window.rollGua) {
-          window.rollGua();
-          const gtxt = (window.document.getElementById('guaBox') || {}).textContent || '';
-          if (!/意境/.test(gtxt)) errors.push(`[D2/运行时] 场景「${name}」rollGua 未渲染意境(可能 GUA_SIMPLE 键不匹配或 rollGua 异常)`);
-        }
-      } catch (e) { errors.push(`[D1] 场景「${name}」rollGua 抛异常: ${e.message}`); }
       res();
     }, 700);
   });
 }
 
 // 首页/第二页(main)-无出生信息：直接 render()（enterApp 无存档分支的原语）。
-// 新设计：第二页为纯个人视图，无出生信息时出「我的今日」个人化占位(提示填信息)+起卦，
-// 不重复首屏通用黄历/吃什么(那些在首屏 peek 的 checkPeek 场景已覆盖)，不泄露命盘/星盘。
+// 新设计：第二页为纯个人视图（我的今日 / 命盘 / 星盘），无出生信息时只出「我的今日」个人化占位，
+// 不重复首屏通用黄历/吃什么/起卦(起卦仅在首屏 peek 的 checkPeek 场景已覆盖)，不泄露命盘/星盘。
 function checkHome(name) {
   const window = loadDom();
   try { window.render(); }
@@ -173,15 +165,8 @@ function checkHome(name) {
       }
       if (!/今日|黄历/.test(txt)) errors.push(`[marker] 场景「${name}」无出生信息未渲染「我的今日」`);
       if (!/专属你的今日指引|填左侧出生信息/.test(txt)) errors.push(`[marker] 场景「${name}」无出生信息未渲染个人化占位(应提示填出生信息)`);
-      if (!/起卦/.test(txt)) errors.push(`[marker] 场景「${name}」无出生信息未渲染起卦入口`);
       if (/命盘/.test(txt)) errors.push(`[D5] 场景「${name}」无出生信息却出现命盘 tab(应推算后才解锁)`);
       if (/星盘/.test(txt)) errors.push(`[D5] 场景「${name}」无出生信息却出现星盘 tab(应推算后才解锁)`);
-      try {
-        if (window.rollGua) { window.rollGua();
-          const gtxt=(window.document.getElementById('guaBox')||{}).textContent||'';
-          if(!/意境/.test(gtxt)) errors.push(`[D2/运行时] 场景「${name}」rollGua 未渲染意境`);
-        }
-      } catch(e){ errors.push(`[D1] 场景「${name}」rollGua 抛异常: ${e.message}`); }
       res();
     }, 500);
   });
@@ -235,6 +220,17 @@ async function checkCelebs(name) {
     // 年份>1900 且月日齐全 → canBazi 为真 → 「我的今日」应出现个人块「今日对你」
     if (c.y > 1900 && c.m && c.d && !/今日对你/.test(txt)) {
       errors.push(`[回归] ${name}: 名人「${c.name}」(${c.y}) 未出个人化内容(可能 y≤1900 触发降级)`);
+    }
+    // 命盘/星盘断言：名人 y>1900 且月日齐全 → 命盘应出八字、星盘应按「午时/成都」估算出图（不得仍占位）
+    if (c.y > 1900 && c.m && c.d) {
+      const mingPanel = window.document.querySelector('.tab-panel[data-tab="ming"]');
+      const xingPanel = window.document.querySelector('.tab-panel[data-tab="xing"]');
+      const mingTxt = mingPanel ? mingPanel.textContent : '';
+      const xingTxt = xingPanel ? xingPanel.textContent : '';
+      if (!/日主|喜用神/.test(mingTxt)) errors.push(`[回归] ${name}: 名人「${c.name}」命盘未渲染八字(日主/喜用神缺失)`);
+      if (/还差出生信息/.test(xingTxt)) errors.push(`[回归] ${name}: 名人「${c.name}」星盘仍占位(时辰缺失应按午时估算出图)`);
+      if (/星盘计算出错/.test(xingTxt)) errors.push(`[回归] ${name}: 名人「${c.name}」星盘计算抛错: ${(xingTxt.match(/星盘计算出错：([^\n]+)/)||[])[1]||''}`);
+      if (!/太阳座|星盘|上升/.test(xingTxt)) errors.push(`[回归] ${name}: 名人「${c.name}」星盘无内容`);
     }
   }
 }

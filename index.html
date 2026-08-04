@@ -286,6 +286,7 @@
 
   /* ============ Tab 导航 ============ */
   .tabs{position:sticky;top:64px;z-index:5;display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px;margin:4px 0 18px;box-shadow:var(--shadow);overflow-x:auto}
+  .rerun-bar{text-align:center;margin:0 0 14px}
   .tab-btn{flex:1;min-width:74px;white-space:nowrap;border:none;background:transparent;color:var(--sub);font-size:13.5px;font-weight:600;padding:9px 10px;border-radius:999px;cursor:pointer;transition:all .24s var(--ease)}
   .tab-btn:hover{color:var(--ink);background:var(--surface-2)}
   .tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--accent-ink);box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 34%,transparent)}
@@ -706,7 +707,7 @@ function render(){
   const anyBirth = y>1900 || m>0 || d>0 || h>=0 || lat!=null || lng!=null;
   const canBazi = y>1900 && m>0 && d>0;            // 年+月+日 足够排八字（时辰可选）
   const canSign = m>0 && d>0;                       // 星座只需月日（无需年份）
-  const canChart = y>1900 && m>0 && d>0 && h>=0 && lat!=null && lng!=null; // 完整星盘需全信息
+  const canChart = y>1900 && m>0 && d>0;            // 星盘：年月日齐全即可（时辰/经纬度缺失时按午时/成都估算，见下方降级提示）
   if(!anyBirth && currentTab!=='today') currentTab='today';
   const provTxt = document.getElementById('birthProv').selectedOptions[0] ? document.getElementById('birthProv').selectedOptions[0].textContent : '';
   const cityTxt = document.getElementById('birthCity').selectedOptions[0] ? document.getElementById('birthCity').selectedOptions[0].textContent : '';
@@ -912,7 +913,7 @@ function render(){
   const foodTip = (D.FOOD_WX_TIP && D.FOOD_WX_TIP[foodWX]) ? `（今日五行喜【${foodWX}】——${D.FOOD_WX_TIP[foodWX]}）` : '';
   const plain = buildPlain(verdict, total, yi, ji, hasBirth&&ys?evalAgainstYongShen(GAN[L.getDayGan()],ys):{delta:0}, sig, dressXiName, daYun, smallThing);
 
-  /* ---- 个人化宜忌：用神修正黄历宜忌，直接并入「适合做/不适合做」，不再单列冗长修正说明 ---- */
+  /* ---- 个人化宜忌：用神修正黄历宜忌，直接并入「宜/忌」，不再单列冗长修正说明 ---- */
   const pYJ = (canBazi && ys) ? personalYiJi(yi, ji, ys) : {pYi:(yi||[]), pJi:(ji||[])};
 
   // 综合分算法说明（点击弹窗用）
@@ -923,8 +924,8 @@ function render(){
     <button class="tab-btn active" data-tab="today" onclick="switchTab('today')">${icon('today')}我的今日</button>
     ${anyBirth?`<button class="tab-btn" data-tab="ming" onclick="switchTab('ming')">${icon('ming')}命盘</button>`:''}
     ${anyBirth?`<button class="tab-btn" data-tab="xing" onclick="switchTab('xing')">${icon('xing')}星盘</button>`:''}
-    <button class="tab-btn" data-tab="gua" onclick="switchTab('gua')">📿 起卦</button>
   </nav>
+  ${hasRun?`<div class="rerun-bar"><button class="btn btn-go rerun" onclick="var f=document.querySelector('.form-wrap'); if(f){f.scrollIntoView({behavior:'smooth'});}">↑ 改信息 / 换个日期再算</button></div>`:''}
   <div class="tab-panel active" data-tab="today">
 
   <!-- ===== 我的今日（个人向：用神/个人历/今日对你，不与首页通用黄历重复） ===== -->
@@ -943,8 +944,8 @@ function render(){
     </div>
 
     <div class="th-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-      <div><span class="yiji-mini y">✓ 适合做</span>${fmtWords(pYJ.pYi,3)}</div>
-      <div><span class="yiji-mini n">✕ 不适合做</span>${fmtWords(pYJ.pJi,3)}</div>
+      <div><span class="yiji-mini y">宜</span>${fmtWords(pYJ.pYi,3)}</div>
+      <div><span class="yiji-mini n">忌</span>${fmtWords(pYJ.pJi,3)}</div>
     </div>
     <div class="mini-detail" style="margin-top:4px">点词语可看大白话解释</div>
 
@@ -960,8 +961,6 @@ function render(){
   </div>
   `}
 
-  <div style="text-align:center;margin:16px 0 4px">
-    <button class="btn btn-go rerun" onclick="var f=document.querySelector('.form-wrap'); if(f){f.scrollIntoView({behavior:'smooth'});}">↑ 改信息 / 换个日期再算</button>
   </div>
   ${anyBirth?`
   <div class="tab-panel" data-tab="ming">
@@ -1006,17 +1005,6 @@ function render(){
   </div>
   `:''}
 
-  <!-- ===== 起卦（独立模块，不填出生信息也能用） ===== -->
-  <div class="tab-panel" data-tab="gua">
-    <div class="card">
-      <h2>📿 起一卦</h2>
-      <p class="mini-detail">随机起卦，每点一次都不同。看这卦的<b>意境</b>与<b>属性</b>，再给爱情 / 事业 / 寻物一句小提示（纯娱乐参考，别较真）。</p>
-      <div style="text-align:center;margin:14px 0">
-        <button class="btn" id="rollBtn" onclick="rollGua()" style="font-size:15px">🎲 起一卦</button>
-      </div>
-      <div id="guaBox"></div>
-    </div>
-  </div>
   `;
   app.innerHTML = deEmoji(__H);
 
@@ -1161,16 +1149,16 @@ function signDaily(todayW, signElem){
   if(SHENG[signElem]===todayW) return {rel:'你生日（耗泄）', tip:'今天适合付出输出，别勉强自己', cls:'mid-t'};
   return {rel:'你克当日（得势）', tip:'今天你有主动权，抓住机会', cls:'good-t'};
 }
-/* ================= 个人化宜忌：用神修正黄历宜忌，直接给出「适合做/不适合做」清单 ================= */
+/* ================= 个人化宜忌：用神修正黄历宜忌，直接给出「宜/忌」清单 ================= */
 function personalYiJi(yi, ji, ys){
   if(!ys || !ys.xi.length) return {pYi:(yi||[]).slice(), pJi:(ji||[]).slice()};
   const pYi = [], pJi = [];
-  // 黄历忌：五行合喜用神 → 你其实能做 → 归适合做；否则 → 不适合做
+  // 黄历忌：五行合喜用神 → 你其实能做 → 归宜；否则 → 忌
   (ji||[]).forEach(w=>{
     const el = D.YIJI_WUXING[w];
     if(el && ys.xi.includes(el)) pYi.push(w); else pJi.push(w);
   });
-  // 黄历宜：五行撞忌神 → 你最好避 → 归不适合做；否则 → 适合做
+  // 黄历宜：五行撞忌神 → 你最好避 → 归忌；否则 → 宜
   (yi||[]).forEach(w=>{
     const el = D.YIJI_WUXING[w];
     if(el && ys.ji.includes(el)) pJi.push(w); else pYi.push(w);
@@ -1181,7 +1169,7 @@ function personalYiJi(yi, ji, ys){
 function buildPlain(verdict, total, yi, ji, ev, sig, dressName, daYun, smallThing){
   const jx = verdict.split('·')[0].trim();
   let s = `今天整体<b>${jx}</b>（综合 ${total} 分）。`;
-  // 适合做什么（宜忌词可点击释义；传空数组则 fmtWords 返回「无」，此处跳过避免空白【无】）
+  // 宜做什么（宜忌词可点击释义；传空数组则 fmtWords 返回「无」，此处跳过避免空白【无】）
   const yiWords = fmtWords(yi,3);
   const yiOk = yiWords && yiWords!=='无';
   if(ev.delta>=8) s += yiOk ? `今日五行正合你的用神，做事得助——适合推进【${yiWords}】这类事。` : `今日五行正合你的用神，做事得助。`;
@@ -1489,6 +1477,7 @@ function runCalc(){
   document.getElementById('app').innerHTML =
     deEmoji(`<div class="ph calc"><div class="cd">☯</div><div class="ct">正在排盘：八字 · 用神 · 星盘 · 黄历 · 卦象…</div></div>`);
   setTimeout(()=>{
+    currentTab = 'today';   // 重算后回到最上面第一个 Tab（我的今日），而非停留在命盘/星盘
     try{ render(); }catch(err){
       document.getElementById('app').innerHTML =
         deEmoji(`<div class="ph"><div class="ph-icon">⚠️</div><div class="ph-title">推算出错了</div><div class="ph-sub">${String(err.message||err)}</div></div>`);
@@ -1497,7 +1486,8 @@ function runCalc(){
     const app = document.getElementById('app');
     app.classList.remove('fade-in'); void app.offsetWidth; app.classList.add('fade-in');
     if(goBtn){ goBtn.disabled = false; goBtn.innerHTML = icon('refresh')+'重新推算'; goBtn.classList.add('rerun'); }
-    if(app.scrollIntoView) app.scrollIntoView({behavior:'smooth', block:'start'});
+    // 重算后稳稳滚回结果区最上面（#app 顶，tabs 吸顶对齐），避免 sticky tabs + 异步重渲染下 scrollIntoView 失效
+    window.scrollTo({top: Math.max(0, window.scrollY + app.getBoundingClientRect().top - 8), behavior:'smooth'});
   }, 420);
 }
 
