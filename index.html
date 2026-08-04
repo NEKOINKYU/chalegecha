@@ -1478,11 +1478,11 @@ function runCalc(){
     deEmoji(`<div class="ph calc"><div class="cd">☯</div><div class="ct">正在排盘：八字 · 用神 · 星盘 · 黄历 · 卦象…</div></div>`);
   setTimeout(()=>{
     currentTab = 'today';   // 重算后回到最上面第一个 Tab（我的今日），而非停留在命盘/星盘
+    hasRun = true; dirty = false;   // 先置「已推算」标记，render 才会渲染常驻的 rerun 入口（改信息/换个日期再算）
     try{ render(); }catch(err){
       document.getElementById('app').innerHTML =
         deEmoji(`<div class="ph"><div class="ph-icon">⚠️</div><div class="ph-title">推算出错了</div><div class="ph-sub">${String(err.message||err)}</div></div>`);
     }
-    hasRun = true; dirty = false;
     const app = document.getElementById('app');
     app.classList.remove('fade-in'); void app.offsetWidth; app.classList.add('fade-in');
     if(goBtn){ goBtn.disabled = false; goBtn.innerHTML = icon('refresh')+'重新推算'; goBtn.classList.add('rerun'); }

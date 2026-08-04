@@ -86,6 +86,7 @@ function loadDom() {
   vc.on('jsdomError', e => {
     const msg = e.message || '';
     if (/ENOTFOUND|copilot\.tencent|Failed to load|Network/i.test(msg)) return; // 忽略网络噪音
+    if (/Not implemented: Window's (scrollTo|scrollIntoView)/i.test(msg)) return; // 忽略 jsdom 未实现的滚动 API 噪音（真实浏览器正常）
     errors.push('[jsdom] ' + (e.detail?.stack || msg));
   });
   const dom = new JSDOM(html, {
@@ -143,6 +144,10 @@ function checkScenario(name, birth) {
       if (!/今日|黄历/.test(txt)) errors.push(`[marker] 场景「${name}」未渲染今日模块`);
       // 回归：带出生信息时「我的今日」应把宜忌修正直接并入「适合做/不适合做」，不得再单列「黄历忌「/黄历宜「」冗长说明
       if (/黄历忌「|黄历宜「/.test(txt)) errors.push(`[回归] 场景「${name}」仍渲染黄历宜忌修正冗长说明(应并入适合做/不适合做两行)`);
+      // 回归：rerun 入口(改信息/换个日期再算)必须常驻在 tab-panel 之外，切到命盘/星盘时仍可见
+      const rb = window.document.querySelector('.rerun-bar');
+      if (!rb) errors.push(`[回归] 场景「${name}」未渲染常驻 rerun 入口(改信息/换个日期再算)`);
+      else if (rb.closest('.tab-panel')) errors.push(`[回归] 场景「${name}」rerun 入口仍嵌在 tab-panel 内(切到命盘/星盘时不可见)`);
       res();
     }, 700);
   });
