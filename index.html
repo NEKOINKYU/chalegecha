@@ -200,7 +200,6 @@
     /* Hero 首页 */
     .hero-title{font-size:clamp(42px,14vw,72px);letter-spacing:3px}
     .hero-tag{font-size:14px}
-    .hero-btn{width:100%;padding:16px 24px;font-size:17px}
     .hero-hint{font-size:12px}
     .intro-inner{padding:0 12px}
     .peek{font-size:12px;padding:10px 12px}
@@ -306,19 +305,14 @@
   .hero-title{font-size:clamp(48px,12vw,86px);font-weight:800;letter-spacing:6px;line-height:1.04;
     background:linear-gradient(135deg,var(--ink) 0%, var(--ink-2) 42%, var(--accent) 100%);
     -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+  .hero-title.title-enter{cursor:pointer;transition:transform .2s var(--ease),filter .2s}
+  .hero-title.title-enter:hover{transform:translateY(-1px) scale(1.015);filter:brightness(1.12)}
+  .hero-title.title-enter:focus-visible{outline:2px solid var(--accent);outline-offset:8px;border-radius:10px}
+  .hero-enter-hint{margin:14px auto 0;font-size:14px;font-weight:600;letter-spacing:1px;color:var(--accent);animation:hintPulse 1.8s ease-in-out infinite}
+  @keyframes hintPulse{0%,100%{opacity:.5}50%{opacity:1}}
+  .hero-hint-foot{margin-top:18px;opacity:.92}
   .hero-tag{margin:20px auto 0;max-width:430px;font-size:15px;line-height:1.95;color:var(--sub)}
-  .hero-btn{margin-top:36px;font-size:16px;font-weight:700;color:var(--accent-ink);
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;border-radius:999px;padding:15px 40px;cursor:pointer;
-    box-shadow:0 10px 26px color-mix(in srgb,var(--accent) 34%,transparent);
-    transition:transform .22s var(--ease-spring),box-shadow .22s var(--ease),filter .2s ease}
-  .hero-btn:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 14px 34px color-mix(in srgb,var(--accent) 42%,transparent)}
-  .hero-btn:active{transform:translateY(0) scale(.98)}
   .hero-hint{margin-top:22px;font-size:12.5px;color:var(--sub);line-height:1.8}
-  /* 首屏入口常驻底部：三张卡再高也始终可见，不会被挤到视口外 */
-  .intro-cta{position:sticky;bottom:0;z-index:5;margin-top:30px;padding:24px 0 4px;text-align:center;
-    background:linear-gradient(to top, var(--bg) 66%, color-mix(in srgb,var(--bg) 0%,transparent))}
-  .intro-cta .hero-btn{margin-top:0}
-  .intro-cta .hero-hint{margin-top:14px}
   .ver-chip{display:inline-block;margin-left:6px;font-size:11px;color:var(--accent);background:var(--accent-soft);border:1px solid var(--line);border-radius:999px;padding:1px 9px;vertical-align:middle}
   /* 首页「今日一瞥」钩子（不填也能看当天） */
   .peek{margin:18px auto 0;font-size:12.5px;color:var(--ink-2);background:color-mix(in srgb,var(--card) 86%,transparent);border:1px solid var(--line);border-radius:14px;padding:10px 16px;max-width:100%;line-height:1.9}
@@ -363,7 +357,6 @@
   .ph-icon .ic{width:48px;height:48px;vertical-align:middle;margin:0}
   .calc .cd .ic{width:42px;height:42px;vertical-align:middle;margin:0}
   .tab-btn .ic{margin-right:5px}
-  .hero-btn .ic{margin-right:7px;vertical-align:-4px}
   .form-summary .ic{margin-right:7px}
   /* ============ 版本更新提示 ============ */
   .update-banner{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:100;
@@ -387,13 +380,11 @@
   <div class="orb orb-3"></div>
   <div class="intro-inner fade-in-soft">
     <div class="hero-kicker">每日宜忌 · 刚刚好的小指引</div>
-    <h1 class="hero-title">查了个查</h1>
+    <h1 class="hero-title title-enter" role="button" tabindex="0" aria-label="进入测算" onclick="agreeAndEnter()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();agreeAndEnter()}">查了个查</h1>
     <p class="hero-tag">八字用神 × 星盘 × 黄历 × 周易，每天给你一点刚刚好的小指引。</p>
+    <p class="hero-enter-hint">👆 点击「查了个查」进入下一页</p>
     <div id="introCards"></div>
-    <div class="intro-cta">
-      <button class="hero-btn" id="heroBtn" onclick="agreeAndEnter()">我已知晓 · 进入测算 →</button>
-      <p class="hero-hint">内容由算法生成，仅供消遣参考，不构成专业建议。出生信息仅保存在你的浏览器本地，不会上传。<span class="ver-chip" id="ver2"></span></p>
-    </div>
+    <p class="hero-hint hero-hint-foot">内容由算法生成，仅供消遣参考，不构成专业建议。出生信息仅保存在你的浏览器本地，不会上传。<span class="ver-chip" id="ver2"></span></p>
   </div>
 </section>
 
@@ -1617,9 +1608,7 @@ function saveBirth(){
   try{ renderHomePeek(); }catch(e){}
   const v2=document.getElementById('ver2'); if(v2) v2.textContent = (D.VERSION||'').split(' · ')[0];
 
-  // 首页按钮文案 + 顶栏日期 + 表单折叠（有存档→默认收起，每日视图更干净）
-  const heroBtn=document.getElementById('heroBtn');
-  if(heroBtn) heroBtn.innerHTML = '我已知晓 · 进入测算 →';
+  // 顶栏日期 + 表单折叠（有存档→默认收起，每日视图更干净）
   const fd=document.getElementById('formDetails');
   if(fd) fd.open = true; // 始终展开，避免用户没发现可以填写
   try{
