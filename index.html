@@ -145,9 +145,12 @@
   .sk-mean-list{margin:7px 0 0;display:flex;flex-direction:column;gap:4px}
   .sk-mean{font-size:12px;color:var(--sub);line-height:1.55}
   .sk-mean b{color:var(--text);font-weight:600}
-  .cg-baihua{margin:6px 0 2px;padding:8px 12px;font-size:12.5px;line-height:1.6;color:var(--sub);background:var(--surface-2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
-  .cg-poem{margin:6px 0 0;padding:8px 12px;font-size:13px;line-height:1.7;color:var(--text);background:var(--surface-2);border-left:3px solid #d4a843;border-radius:0 8px 8px 0}
+  .cg-weight{font-size:15px;font-weight:800;color:var(--accent);letter-spacing:.5px}
+  .cg-baihua{margin:6px 0 2px;padding:8px 12px;font-size:12.5px;line-height:1.6;color:var(--sub);background:var(--surface-2);border-left:3px solid #4a90d9;border-radius:0 8px 8px 0}
+  .cg-poem{margin:6px 0 0;padding:8px 12px;font-size:13px;line-height:1.7;color:var(--text);background:var(--surface-2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
   .cg-lab{display:inline-block;font-size:10.5px;font-weight:700;color:var(--sub);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-right:7px;vertical-align:middle}
+  .cg-lab.gold{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
+  .cg-lab.blue{color:#fff;background:#4a90d9;border-color:#4a90d9}
   .form-hint{font-size:12px;color:var(--ink-2);background:var(--surface-2);border:1px dashed var(--line);border-radius:14px;padding:10px 12px;margin-bottom:12px;line-height:1.9}
   .quote-text{font-size:14px;line-height:1.9;color:var(--accent);font-style:italic;text-align:center;padding:6px 12px;background:var(--accent-soft);border:1px solid var(--line);border-radius:12px;margin-top:8px}
   .gua-display{display:flex;gap:14px;align-items:center;margin-top:6px;flex-wrap:wrap;justify-content:center}
@@ -982,7 +985,7 @@ function render(){
         <div><b><span class="yw" onclick="showWordTip(event,'日主')">日主</span>：</b>${bazi.dayGan}${bazi.dayZhi}（${bazi.me}）<span class="strong-badge ${ys.strong?'sb-strong':'sb-weak'}" style="cursor:pointer" onclick="showWordTip(event,'强弱分')">${ys.strong?'身强':'身弱'} · 强弱分${bazi.score>0?'+':''}${bazi.score}</span></div>
         <div><b><span class="yw" onclick="showWordTip(event,'喜用神')">喜用神</span>：</b>${ys.xi.map(wx).join('、')}　<b><span class="yw" onclick="showWordTip(event,'忌神')">忌神</span>：</b>${ys.ji.map(wx).join('、')}</div>
         <div><b><span class="yw" onclick="showWordTip(event,'五行分布')">五行分布</span>：</b>${Object.entries(bazi.wuxing).map(([k,v])=>`${wx(k)}${v}`).join(' · ')}　<b>缺：</b>${missingWuxing(bazi.wuxing).map(wx).join('、')||'无'}</div>
-        ${chengGu?`<div><b><span class="yw" onclick="showWordTip(event,'袁天罡称骨')">袁天罡称骨</span>：</b><span style="font-size:14px">⚖️ ${chengGu.cn}</span></div>${chengGu.poem?`<div class="cg-poem"><span class="cg-lab">原批语</span>${escHtml(chengGu.poem)}</div>`:''}${D.CHENG_GU.baihua[chengGu.cn]?`<div class="cg-baihua"><span class="cg-lab">白话</span>${escHtml(D.CHENG_GU.baihua[chengGu.cn])}</div>`:''}`:(canBazi?`<div><b><span class="yw" onclick="showWordTip(event,'袁天罡称骨')">袁天罡称骨</span>：</b><span class="mini-detail">需出生时辰才能称骨</span></div>`:'')}
+        ${chengGu?`<div><b><span class="yw" onclick="showWordTip(event,'袁天罡称骨')">袁天罡称骨</span>：</b><span class="cg-weight">⚖️ ${chengGu.cn}</span></div>${chengGu.poem?`<div class="cg-poem"><span class="cg-lab gold">原批语</span>${escHtml(chengGu.poem)}</div>`:''}${D.CHENG_GU.baihua[chengGu.cn]?`<div class="cg-baihua"><span class="cg-lab blue">白话</span>${escHtml(D.CHENG_GU.baihua[chengGu.cn])}</div>`:''}`:(canBazi?`<div><b><span class="yw" onclick="showWordTip(event,'袁天罡称骨')">袁天罡称骨</span>：</b><span class="mini-detail">需出生时辰才能称骨</span></div>`:'')}
         ${shensha.length?`<div><b><span class="yw" onclick="showWordTip(event,'神煞')">神煞</span>：</b>${shensha.map(s=>{const k=D.SHENSHA_KIND[s]||'中';const cls=k==='吉'?'good':k==='凶'?'bad':'mid';return `<span class="shensha sk-${cls}"><b class="sk-tag">${k}</b>${s}</span>`;}).join('')} <span class="mini-detail">（已标注吉/中/凶，含义见下方）</span></div>
         <div class="sk-mean-list">${shensha.map(s=>`<div class="sk-mean"><b>${s}</b>：${escHtml(D.ASTRO_DICT[s]||'传统神煞，暂无可查释义')}</div>`).join('')}</div>`:''}
         ${daYun?`<div><b><span class="yw" onclick="showWordTip(event,'大运')">当前大运</span>：</b>${colorGZ(daYun.gz)}（${daYun.startAge}岁 · ${daYun.startYear}年起）· ${daYun.rel}</div>`:''}
