@@ -272,11 +272,13 @@
 
   /* ============ 首页 / Hero 入口 ============ */
   .hidden{display:none!important}
-  .intro{position:fixed;inset:0;top:env(safe-area-inset-top,0px);z-index:50;display:flex;align-items:center;justify-content:center;text-align:center;
+  .intro{position:fixed;inset:0;top:env(safe-area-inset-top,0px);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;
     background:radial-gradient(125% 120% at 50% 18%, var(--card) 0%, var(--bg) 62%);
-    overflow:hidden;transition:opacity .5s var(--ease), transform .5s var(--ease);padding:24px}
+    overflow-y:auto;transition:opacity .5s var(--ease), transform .5s var(--ease);padding:calc(env(safe-area-inset-top,0px) + 32px) 18px 44px}
   .intro.hide{opacity:0;transform:scale(1.03);pointer-events:none}
-  .intro-inner{position:relative;z-index:2;padding:0 24px;max-width:560px}
+  .intro-inner{position:relative;z-index:2;padding:0 24px;max-width:560px;width:100%}
+  /* 首屏三卡容器：左对齐（卡片内有宜忌/列表，居中会乱），占满 560 */
+  #introCards{text-align:left;width:100%;margin-top:28px}
   .hero-kicker{font-size:13px;letter-spacing:4px;color:var(--accent);font-weight:600;margin-bottom:20px;opacity:.92}
   .hero-title{font-size:clamp(48px,12vw,86px);font-weight:800;letter-spacing:6px;line-height:1.04;
     background:linear-gradient(135deg,var(--ink) 0%, var(--ink-2) 42%, var(--accent) 100%);
@@ -359,9 +361,9 @@
     <div class="hero-kicker">每日宜忌 · 刚刚好的小指引</div>
     <h1 class="hero-title">查了个查</h1>
     <p class="hero-tag">八字用神 × 星盘 × 黄历 × 周易，每天给你一点刚刚好的小指引。</p>
-    <button class="hero-btn" id="heroBtn" onclick="agreeAndEnter()">我已知晓 · 进入首页 →</button>
+    <div id="introCards"></div>
+    <button class="hero-btn" id="heroBtn" onclick="agreeAndEnter()">我已知晓 · 进入测算 →</button>
     <p class="hero-hint">内容由算法生成，仅供消遣参考，不构成专业建议。出生信息仅保存在你的浏览器本地，不会上传。<span class="ver-chip" id="ver2"></span></p>
-    <div class="peek" id="peek"></div>
   </div>
 </section>
 
@@ -1222,9 +1224,9 @@ function pickWorldCity(){
 function lockCustom(lat, lng, tz){
   lockRegion(lat, lng, tz);
 }
-function rerollFood(){
+function rerollFood(targetId){
   const pool = (D.FOOD_BY_WX && D.FOOD_BY_WX[curFoodWX] && D.FOOD_BY_WX[curFoodWX].length) ? D.FOOD_BY_WX[curFoodWX] : (D.FOODS||['随便吃点']);
-  const box = document.getElementById('foodBox');
+  const box = document.getElementById(targetId || 'foodBox');
   if(box) box.textContent = pool[Math.floor(Math.random()*pool.length)];
 }
 function guaSvg(down, up, moving){
@@ -1257,7 +1259,7 @@ function dayGua(dateStr){
 }
 
 
-function rollGua(){
+function rollGua(targetId){
   // 随机起卦：上卦/下卦/动爻 全随机（每次点击都不同，供娱乐参考）
   const up = 1+Math.floor(Math.random()*8);
   const down = 1+Math.floor(Math.random()*8);
@@ -1271,7 +1273,7 @@ function rollGua(){
   const guaBad = /凶|慎|忌|困|讼|蹇|剥|否|明夷|难|无妄/.test(g.baseDesc);
   const jx = guaGood?'偏吉':guaBad?'偏谨慎':'中平';
   const sim = (D.GUA_SIMPLE && D.GUA_SIMPLE[g.baseName]) ? D.GUA_SIMPLE[g.baseName] : null;
-  const box = document.getElementById('guaBox');
+  const box = document.getElementById(targetId || 'guaBox');
   if(box) box.innerHTML = deEmoji(`
     <div class="gua-display">
       <div class="gua-box">
@@ -1296,8 +1298,82 @@ function rollGua(){
       ${sim.xw?`<div class="gs-row"><span class="gs-k">寻物</span><span class="gs-v">${sim.xw}</span></div>`:''}
     </div>`:`<div class="mini-detail" style="margin-top:8px">（该卦暂无白话解析）</div>`}
     <div class="mini-detail" style="margin-top:8px">⚡ 本次为<b>随机起卦</b>（每点一次都不一样，纯娱乐参考）。</div>`);
-  const btn = document.getElementById('rollBtn');
+  const btn = document.getElementById((targetId==='introGuaBox')?'introRollBtn':'rollBtn');
   if(btn) btn.textContent = '🎲 再起一卦';
+}
+
+/* ============ 首屏预览：今日黄历 + 今日吃什么 + 起卦（不填出生信息也能看） ============ */
+function renderHomePeek(){
+  const box = document.getElementById('introCards');
+  if(!box) return;
+  try{
+    const t = new Date();
+    const solar = Solar.fromDate(t);
+    const L = solar.getLunar();
+    const lunarStr = L.toString();
+    const shengXiao = L.getYearShengXiao();
+    const sign = getSign(solar.getMonth(), solar.getDay());
+    const sig = D.SIGNS[sign];
+    const yi = L.getDayYi(); const ji = L.getDayJi();
+    const todayW = GAN[L.getDayGan()];
+    const todayC = D.WUXING_COLORS[todayW];
+    const todayStr = solar.toYmd()+' '+solar.getWeekInChinese();
+    // 综合分（仅黄历，无八字个性化）
+    let huali = 60 + yi.length*2 - ji.length*4; huali = Math.max(10, Math.min(95, huali));
+    const total = Math.round(huali);
+    let verdict='', vClass='mid';
+    if(total>=75){verdict='大吉 · 顺势而为，宜行动';vClass='good';}
+    else if(total>=60){verdict='中吉 · 平稳推进，抓重点';vClass='mid';}
+    else if(total>=45){verdict='小凶 · 宜守不宜攻';vClass='mid';}
+    else {verdict='凶 · 谨慎行事，宜静不宜动';vClass='bad';}
+    const smallThing = D.SMALL_THINGS[Math.floor(Math.random()*D.SMALL_THINGS.length)];
+    const plain = buildPlain(verdict, total, yi, ji, {delta:0}, sig, '中性', null, smallThing);
+    const dressHtml = `<div class="kv"><div><b>今日（${todayW}日）幸运色：</b>${todayC.name} ${todayC.colors.map(c=>`<span class="color-chip" style="background:${c}"></span>`).join('')}<br><span class="mini-detail">按今日黄历五行推荐；填了出生信息会换成更贴合你个人的色系。</span></div></div>`;
+    // 今日吃什么（无个性化 → 按今日日干五行）
+    const foodWX = todayW;
+    curFoodWX = foodWX;
+    const foodPool = (D.FOOD_BY_WX && D.FOOD_BY_WX[foodWX] && D.FOOD_BY_WX[foodWX].length) ? D.FOOD_BY_WX[foodWX] : (D.FOODS||['随便吃点']);
+    const todayFood = foodPool[Math.floor(Math.random()*foodPool.length)];
+    const foodTip = (D.FOOD_WX_TIP && D.FOOD_WX_TIP[foodWX]) ? `（今日五行喜【${foodWX}】——${D.FOOD_WX_TIP[foodWX]}）` : '';
+    box.innerHTML = deEmoji(`
+      <div class="card today-hero">
+        <h2>📅 今日黄历</h2>
+        <div class="lunar-line">${lunarStr} · ${shengXiao}年 · ${sign}座</div>
+        <div class="th-top">
+          <div class="th-score"><div class="th-num">${total}</div><div class="th-unit">综合分</div></div>
+          <div class="th-main">
+            <div class="th-verdict ${vClass}">${verdict}</div>
+            <div class="th-date">${todayStr}</div>
+          </div>
+        </div>
+        <div class="th-plain">${plain}</div>
+        <div class="th-row">
+          <span class="yiji-mini y">✓ 宜</span>${fmtWords(yi,3)}
+          <span class="yiji-mini n" style="margin-left:10px">✕ 忌</span>${fmtWords(ji,3)}
+        </div>
+        <div class="mini-detail" style="margin-top:4px">点词语可看大白话解释</div>
+        <div class="th-row"><span class="th-label">幸运色</span>${dressHtml}</div>
+        <div class="mini-detail" style="margin-top:6px">填出生信息后，这里会变成「个人历」，结合你的八字用神给出宜忌。</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--accent)">
+        <h2>🍜 今天想吃什么</h2>
+        <div class="plain-text" id="introFoodBox" style="font-size:20px;text-align:center;padding:16px 10px;font-weight:600;color:var(--ink)">${todayFood}</div>
+        <div class="mini-detail" style="text-align:center;margin-top:4px">${foodTip}</div>
+        <div style="text-align:center;margin-top:10px"><button class="btn btn-ghost" onclick="rerollFood('introFoodBox')">🎲 换一个</button></div>
+      </div>
+      <div class="card">
+        <h2>📿 起一卦</h2>
+        <p class="mini-detail">随机起卦，每点一次都不同。看这卦的<b>意境</b>与<b>属性</b>，再给爱情 / 事业 / 寻物一句小提示（纯娱乐参考，别较真）。</p>
+        <div style="text-align:center;margin:14px 0">
+          <button class="btn" id="introRollBtn" onclick="rollGua('introGuaBox')" style="font-size:15px">🎲 再起一卦</button>
+        </div>
+        <div id="introGuaBox"></div>
+      </div>
+    `);
+    rollGua('introGuaBox');   // 首屏默认出一卦，一进来就能用
+  }catch(err){
+    box.innerHTML = `<div class="card"><div class="ph-title">今日内容加载失败</div><div class="ph-sub">${String((err && err.message) || err)}</div></div>`;
+  }
 }
 
 /* ============ 推算触发：填信息 → 点按钮才算 ============ */
@@ -1494,22 +1570,13 @@ function saveBirth(){
   const pad=n=>String(n).padStart(2,'0');
   document.getElementById('targetDate').value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   document.getElementById('targetTime').value=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  // 首页「今日一瞥」（不填也能看当天五行 / 宜忌 / 幸运色）
-  try{
-    const t=new Date();
-    const sl=Solar.fromDate(t).getLunar();
-    const dw=GAN[sl.getDayGan()];
-    const yi0=sl.getDayYi().slice(0,3).join('、');
-    const ji0=sl.getDayJi().slice(0,3).join('、');
-    const dress=D.WUXING_COLORS[dw]||{name:'中性'};
-    const pk=document.getElementById('peek');
-    if(pk) pk.innerHTML=deEmoji(`📅 今日 · 五行 <b style="color:${D.WUXING_TEXT[dw]||'var(--ink)'}">${dw}</b> · 宜 ${yi0||'—'}｜忌 ${ji0||'—'} · 幸运色 <b style="color:var(--accent)">${dress.name}</b>`);
-  }catch(e){}
+  // 首屏三卡：今日黄历 + 今日吃什么 + 起卦（不填出生信息也能看，进入 main 前先渲染）
+  try{ renderHomePeek(); }catch(e){}
   const v2=document.getElementById('ver2'); if(v2) v2.textContent = (D.VERSION||'').split(' · ')[0];
 
   // 首页按钮文案 + 顶栏日期 + 表单折叠（有存档→默认收起，每日视图更干净）
   const heroBtn=document.getElementById('heroBtn');
-  if(heroBtn) heroBtn.innerHTML = icon('sparkle',18) + '我已知晓 · 开始推算 →';
+  if(heroBtn) heroBtn.innerHTML = '我已知晓 · 进入测算 →';
   const fd=document.getElementById('formDetails');
   if(fd) fd.open = true; // 始终展开，避免用户没发现可以填写
   try{

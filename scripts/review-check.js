@@ -183,10 +183,38 @@ function checkHome(name) {
   });
 }
 
+// 首屏-无出生信息：验证「首次访问即出今日黄历+今日吃什么+起卦、无需推算」（本次需求核心）
+function checkPeek(name) {
+  const window = loadDom();
+  try { window.renderHomePeek(); }
+  catch (e) { errors.push(`[D1/D4] 场景「${name}」首屏 renderHomePeek 抛异常: ${(e.stack||e.message).slice(0,120)}`); }
+  return new Promise(res => {
+    setTimeout(() => {
+      const box = window.document.getElementById('introCards');
+      const txt = box ? box.textContent : '';
+      if (/加载失败/.test(txt)) errors.push(`[D1/D4] 场景「${name}」首屏三卡渲染失败(降级提示)`);
+      if (!/今日黄历/.test(txt)) errors.push(`[marker] 场景「${name}」首屏未渲染今日黄历`);
+      if (!/今天想吃什么/.test(txt)) errors.push(`[marker] 场景「${name}」首屏未渲染今日吃什么`);
+      if (!/起卦/.test(txt)) errors.push(`[marker] 场景「${name}」首屏未渲染起卦`);
+      if (/命盘/.test(txt)) errors.push(`[D5] 场景「${name}」首屏无出生信息却出现命盘`);
+      if (/星盘/.test(txt)) errors.push(`[D5] 场景「${name}」首屏无出生信息却出现星盘`);
+      try {
+        if (window.rollGua) {
+          const gtxt = (window.document.getElementById('introGuaBox')||{}).textContent || '';
+          if (!/意境/.test(gtxt)) errors.push(`[D2/运行时] 场景「${name}」首屏起卦未渲染意境`);
+        }
+      } catch (e) { errors.push(`[D1] 场景「${name}」首屏起卦抛异常: ${e.message}`); }
+      res();
+    }, 450);
+  });
+}
+
 (async () => {
   syntaxCheck();
   zodiacKeyCheck();
   guaKeyCheck();
+  // 首屏-无出生信息：验证「首次访问即出今日黄历+今日吃什么+起卦、无需推算」（本次需求核心）
+  await checkPeek('首屏-无出生信息');
   // 首页-无出生信息：验证「进首页即出今日黄历+今日吃什么+起卦、无需推算」(本次需求核心)
   await checkHome('首页-无出生信息');
   // 三场景覆盖：用户生日(双鱼,完整) / 原 bug 星座(巨蟹,完整) / 仅月日
