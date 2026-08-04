@@ -1297,7 +1297,7 @@ function rollGua(targetId){
   let nD=down, nU=up;
   if(moving<=3) nD=flipGua(down, moving); else nU=flipGua(up, moving-3);
   const bian = D.GUA64[String(nD)+String(nU)] || null;
-  const g = {baseName:base[0], baseDesc:base[1], moving, down, up, bianName:bian?bian[0]:null, bianDesc:bian?bian[1]:null};
+  const g = {baseName:base[0], baseDesc:base[1], moving, down, up, nD, nU, bianName:bian?bian[0]:null, bianDesc:bian?bian[1]:null};
   const guaGood = /吉|宜|利|升|成|泰|益|大有|丰|谦|复|同人/.test(g.baseDesc);
   const guaBad = /凶|慎|忌|困|讼|蹇|剥|否|明夷|难|无妄/.test(g.baseDesc);
   const jx = guaGood?'偏吉':guaBad?'偏谨慎':'中平';
@@ -1313,7 +1313,7 @@ function rollGua(targetId){
       </div>
       ${g.bianName?`<div class="gua-arrow">➜</div>
       <div class="gua-box">
-        <div class="g-name">${g.bianName}</div>
+        <div class="g-name">${guaSvg(g.nD, g.nU, 0)} ${g.bianName}</div>
         <div class="g-desc">${g.bianDesc}</div>
         <div class="mini-detail" style="margin-top:4px">变卦（第${g.moving}爻动而变）</div>
       </div>`:''}
