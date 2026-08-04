@@ -217,6 +217,28 @@ function checkPeek(name) {
   });
 }
 
+// 随机名人库回归：每个 CELEBS 条目填表后都应能出个人化内容。
+// 年份≤1900 会令 render() 的 hasBirth=(y>1900) 闸门失效 → 「我的今日/命盘/星盘」降级成占位（表现：点推算后信息出不来）。
+// 本检查拦住「重新混入古人」这类回归。
+// 注意：runCalc 异步(420ms 后 render)，需逐条 await 后再断言，且逐条串行避免渲染互相覆盖。
+async function checkCelebs(name) {
+  const window = loadDom();
+  const celebs = (window.DATA && window.DATA.CELEBS) || [];
+  if (!celebs.length) { errors.push(`[回归] ${name}: 未找到 CELEBS 库`); return; }
+  for (const c of celebs) {
+    fillAndRun(window, { y: c.y, m: c.m, d: c.d, h: c.h, gender: c.gender, lat: c.lat, lng: c.lng, tz: c.tz });
+    await new Promise(res => setTimeout(res, 500)); // 等 runCalc 的 420ms 渲染完成
+    const app = window.document.getElementById('app');
+    const txt = app ? app.textContent : '';
+    if (/推算出错了/.test(txt)) { errors.push(`[回归] ${name}: 名人「${c.name}」(${c.y}) 点推算后崩溃`); continue; }
+    if (/正在排盘/.test(txt)) { errors.push(`[回归] ${name}: 名人「${c.name}」(${c.y}) 渲染未完成(异步时序)`); continue; }
+    // 年份>1900 且月日齐全 → canBazi 为真 → 「我的今日」应出现个人块「今日对你」
+    if (c.y > 1900 && c.m && c.d && !/今日对你/.test(txt)) {
+      errors.push(`[回归] ${name}: 名人「${c.name}」(${c.y}) 未出个人化内容(可能 y≤1900 触发降级)`);
+    }
+  }
+}
+
 (async () => {
   syntaxCheck();
   zodiacKeyCheck();
@@ -229,6 +251,8 @@ function checkPeek(name) {
   await checkScenario('双鱼-完整', { y: 2002, m: 2, d: 19, h: 12, gender: 1, lat: 30.57, lng: 104.07, tz: 8 });
   await checkScenario('巨蟹-完整', { y: 1990, m: 7, d: 1, h: 10, gender: 0, lat: 31.23, lng: 121.47, tz: 8 });
   await checkScenario('仅月日', { m: 5, d: 15 });
+  // 随机名人库回归：每个 CELEBS 条目填表后都应出个人化内容(拦「混入年份≤1900 导致信息出不来」)
+  await checkCelebs('随机名人库');
 
   if (errors.length) {
     console.log(`❌ review-check 未通过，发现 ${errors.length} 处缺陷：`);

@@ -67,6 +67,9 @@ SIGNS: {
 /* ---------------- 名人示例库（公开人物，演示用） ----------------
  * 「填入随机名人示例」按钮从此随机取一位。出生时辰大多无权威公开记录 → h:null（时辰未知，演示降级能力）。
  * tz：出生地时区（UTC 偏移），星盘计算用。lat/lng：出生地经纬度。
+ * ⚠️ 铁律：仅收录出生年 y>1900 的人物。APP 个性化依赖 render() 的 hasBirth=(y>1900) 闸门，
+ *    年份≤1900 会令「我的今日/命盘/星盘」全部降级成占位（表现：点推算后信息出不来）。
+ *    曾因此剔除：鲁迅1881、爱因斯坦1879、莫扎特1756、贝多芬1770、牛顿1643、达芬奇1452。
  */
 CELEBS: [
   {name:'周杰伦', y:1979, m:1, d:18, h:null, gender:1, lat:25.17, lng:121.44, tz:8,  note:'华语乐坛天王'},
@@ -74,17 +77,21 @@ CELEBS: [
   {name:'李健',   y:1974, m:9, d:23, h:null, gender:1, lat:45.75, lng:126.65, tz:8,  note:'音乐诗人'},
   {name:'刘德华', y:1961, m:9, d:27, h:null, gender:1, lat:22.32, lng:114.17, tz:8,  note:'四大天王之一'},
   {name:'莫言',   y:1955, m:2, d:17, h:null, gender:1, lat:36.38, lng:119.75, tz:8,  note:'诺贝尔文学奖得主'},
-  {name:'鲁迅',   y:1881, m:9, d:25, h:null, gender:1, lat:30.03, lng:120.58, tz:8,  note:'文学家、思想家'},
   {name:'宫崎骏', y:1941, m:1, d:5,  h:null, gender:1, lat:35.68, lng:139.69, tz:9,  note:'动画电影大师'},
-  {name:'爱因斯坦', y:1879, m:3, d:14, h:null, gender:1, lat:48.40, lng:9.99, tz:1,  note:'物理学家，相对论'},
-  {name:'牛顿',   y:1643, m:1, d:4,  h:null, gender:1, lat:52.77, lng:-0.70, tz:0,  note:'物理学家，经典力学'},
-  {name:'莫扎特', y:1756, m:1, d:27, h:null, gender:1, lat:47.80, lng:13.04, tz:1,  note:'古典音乐作曲家'},
-  {name:'贝多芬', y:1770, m:12, d:16, h:null, gender:1, lat:50.73, lng:7.10, tz:1,  note:'古典音乐作曲家'},
-  {name:'达·芬奇', y:1452, m:4, d:15, h:null, gender:1, lat:43.78, lng:10.93, tz:1, note:'文艺复兴巨匠'},
   {name:'乔布斯', y:1955, m:2, d:24, h:null, gender:1, lat:37.77, lng:-122.42, tz:-8, note:'苹果公司创始人'},
   {name:'马斯克', y:1971, m:6, d:28, h:null, gender:1, lat:-25.75, lng:28.19, tz:2, note:'特斯拉/SpaceX 创始人'},
   {name:'泰勒·斯威夫特', y:1989, m:12, d:13, h:null, gender:0, lat:40.27, lng:-76.88, tz:-5, note:'流行音乐天后'},
-  {name:'奥普拉', y:1954, m:1, d:29, h:null, gender:0, lat:33.45, lng:-88.82, tz:-6, note:'脱口秀女王'}
+  {name:'奥普拉', y:1954, m:1, d:29, h:null, gender:0, lat:33.45, lng:-88.82, tz:-6, note:'脱口秀女王'},
+  {name:'成龙',   y:1954, m:4, d:7,  h:null, gender:1, lat:22.32, lng:114.17, tz:8,  note:'功夫喜剧巨星'},
+  {name:'周星驰', y:1962, m:6, d:22, h:null, gender:1, lat:22.32, lng:114.17, tz:8,  note:'喜剧之王'},
+  {name:'邓丽君', y:1953, m:1, d:29, h:null, gender:0, lat:23.70, lng:120.43, tz:8,  note:'华语永恒歌后'},
+  {name:'张国荣', y:1956, m:9, d:12, h:null, gender:1, lat:22.32, lng:114.17, tz:8,  note:'传奇歌手'},
+  {name:'迈克尔·杰克逊', y:1958, m:8, d:29, h:null, gender:1, lat:41.59, lng:-87.35, tz:-6, note:'流行音乐之王'},
+  {name:'科比·布莱恩特', y:1978, m:8, d:23, h:null, gender:1, lat:39.95, lng:-75.17, tz:-5, note:'NBA 传奇'},
+  {name:'梅西',   y:1987, m:6, d:24, h:null, gender:1, lat:-32.95, lng:-60.64, tz:-3, note:'足球巨星'},
+  {name:'C罗',    y:1985, m:2, d:5,  h:null, gender:1, lat:32.76, lng:-16.96, tz:0,  note:'足球巨星'},
+  {name:'比尔·盖茨', y:1955, m:10, d:28, h:null, gender:1, lat:47.61, lng:-122.33, tz:-8, note:'微软创始人'},
+  {name:'村上春树', y:1949, m:1, d:12, h:null, gender:1, lat:35.01, lng:135.77, tz:9,  note:'作家'}
 ],
 
 /* ---------------- 黄历宜忌词白话词典（点击弹窗释义用） ---------------- */
