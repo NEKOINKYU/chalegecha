@@ -778,12 +778,12 @@ function render(){
   /* 四维宜忌：当前版本不展示，计算保留以备复用 */
 
   /* ---- 穿衣颜色 ---- */
+  const todayW = GAN[L.getDayGan()];
+  const todayC = D.WUXING_COLORS[todayW];
   let dressHtml = '';
   if(ys && ys.xi.length){
     const xi0 = D.WUXING_COLORS[ys.xi[0]];
-    const todayW = GAN[L.getDayGan()];
     const evD = evalAgainstYongShen(todayW, ys);
-    const todayC = D.WUXING_COLORS[todayW];
     dressHtml = `
       <div class="kv">
         <div><b>主推（用神 ${ys.xi[0]} 色系）：</b>${xi0.name} ${xi0.colors.map(c=>`<span class="color-chip" style="background:${c}"></span>`).join('')}<br><span class="mini-detail">${xi0.tip}</span></div>
@@ -792,7 +792,7 @@ function render(){
         <div style="margin-top:6px"><b>星座幸运色：</b><span style="color:${sig.color[0]}">■ ${sig.color[0]}</span> <span style="color:${sig.color[1]}">■ ${sig.color[1]}</span></div>
       </div>`;
   } else {
-    dressHtml = `<div class="mini-detail">填出生信息后，这里按你的喜用神推荐每日穿衣色系。</div>`;
+    dressHtml = `<div class="kv"><div><b>今日（${todayW}日）幸运色：</b>${todayC.name} ${todayC.colors.map(c=>`<span class="color-chip" style="background:${c}"></span>`).join('')}<br><span class="mini-detail">未填出生信息——按今日黄历五行推荐；填了信息会换成更贴合你个人的色系。</span></div></div>`;
   }
 
   /* ---- 星盘（celestine） ---- */
@@ -856,7 +856,6 @@ function render(){
   const todayFood = foodPool[Math.floor(Math.random()*foodPool.length)];
   const foodTip = (D.FOOD_WX_TIP && D.FOOD_WX_TIP[foodWX]) ? `（今日五行喜【${foodWX}】——${D.FOOD_WX_TIP[foodWX]}）` : '';
   const plain = buildPlain(verdict, total, yi, ji, hasBirth&&ys?evalAgainstYongShen(GAN[L.getDayGan()],ys):{delta:0}, sig, dressXiName, daYun, smallThing);
-  const dayGuaHtml = dayGua(target);   // 按日期种子固定今日卦（同日不变）
 
   /* ---- 个人修正（黄历 vs 命盘） ---- */
   let personalHtml = '';
@@ -878,46 +877,37 @@ function render(){
   </nav>
   <div class="tab-panel active" data-tab="today">
 
-  <!-- ===== 今日一屏摘要（首屏极简） ===== -->
+  <!-- ===== 今日黄历（合并：总结 + 宜忌 + 幸运色 + 卦，按是否填信息个性化） ===== -->
   <div class="card today-hero">
+    <h2>📅 今日黄历</h2>
+    <div class="lunar-line">${lunarStr} · ${shengXiao}年 · ${sign}座</div>
+    ${hasBirth?`<div class="eight-char" style="margin-top:4px;justify-content:flex-start;padding-left:0">今日八字 ${colorBazi(eightChar)}</div>`:''}
+
     <div class="th-top">
       <div class="th-score"><div class="th-num">${total}</div><div class="th-unit">综合分</div></div>
       <div class="th-main">
         <div class="th-verdict ${vClass}">${verdict}</div>
-        <div class="th-date">${todayStr} · ${sign}座${hasBirth?'':' · 农历 '+lunarStr}</div>
-        ${hasBirth?`<div class="eight-char" style="margin-top:4px;justify-content:flex-start;padding-left:0">今日八字 ${colorBazi(eightChar)}</div>`:''}
+        <div class="th-date">${todayStr}</div>
       </div>
     </div>
     <div class="th-plain">${plain}</div>
+
     <div class="th-row">
-      <span class="yiji-mini y">✓ 宜</span>${fmtWords(yi,3)}
-      <span class="yiji-mini n" style="margin-left:10px">✕ 忌</span>${fmtWords(ji,3)}
+      ${hasBirth?`<span class="yiji-mini y">✓ 适合做</span>${fmtWords(yi,3)}`:`<span class="yiji-mini y">✓ 宜</span>${fmtWords(yi,3)}`}
+      ${hasBirth?`<span class="yiji-mini n" style="margin-left:10px">✕ 不适合做</span>${fmtWords(ji,3)}`:`<span class="yiji-mini n" style="margin-left:10px">✕ 忌</span>${fmtWords(ji,3)}`}
     </div>
+    <div class="mini-detail" style="margin-top:4px">点词语可看大白话解释</div>
     ${hasBirth&&ys?`<div class="th-row" style="font-size:12px"><span class="yiji-mini" style="background:var(--accent-soft);color:var(--accent);border-color:var(--accent)">个人历</span><span class="mini-detail">今日${wx(GAN[L.getDayGan()])}日对你「${evalAgainstYongShen(GAN[L.getDayGan()],ys).rel||'中性'}」</span></div>`:''}
+
     <div class="th-row"><span class="th-label">幸运色</span>${dressHtml}</div>
-    <div class="th-gua">${dayGuaHtml}</div>
-    <div id="quoteText" class="th-quote"></div>
-  </div>
 
-  <!-- ===== 今日黄历（精简：宜忌 + 农历） ===== -->
-  <div class="card">
-    <h2>📅 今日黄历</h2>
-    <div class="lunar-line">${lunarStr} · ${shengXiao}年 · ${sign}座</div>
-    <div class="yi-ji">
-      <div class="yi"><b>宜</b><br>${fmtWords(yi,8)||'诸事不宜'}</div>
-      <div class="ji"><b>忌</b><br>${fmtWords(ji,8)||'百无禁忌'}</div>
-    </div>
-    <div class="mini-detail" style="margin-top:6px">点击宜 / 忌词语可看大白话解释</div>
-  </div>
-
-  <!-- ===== 今日一卦（梅花易数，互动趣味） ===== -->
-  <div class="card">
-    <h2>📖 今日一卦</h2>
-    <div style="text-align:center;padding:10px 0" id="rollGuaBtn">
+    <div style="margin-top:12px;text-align:center;padding:10px 0 2px;border-top:1px dashed var(--line)">
       <button class="btn" id="rollBtn" onclick="rollGua()" style="font-size:14px">🎲 起一卦</button>
       <div class="mini-detail" style="margin-top:8px">每点一次都随机出不同的卦（纯娱乐参考）。</div>
+      <div id="guaBox"></div>
     </div>
-    <div id="guaBox"></div>
+
+    <div id="quoteText" class="th-quote"></div>
   </div>
 
   <!-- ===== 今天想吃什么（轻松趣味） ===== -->
@@ -930,7 +920,6 @@ function render(){
 
   <div style="text-align:center;margin:16px 0 4px">
     <button class="btn btn-go rerun" onclick="var f=document.querySelector('.form-wrap'); if(f){f.scrollIntoView({behavior:'smooth'});}">↑ 改信息 / 换个日期再算</button>
-  </div>
   </div>
   <div class="tab-panel" data-tab="ming">
   <div class="card">
