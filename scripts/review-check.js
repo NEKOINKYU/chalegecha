@@ -250,10 +250,26 @@ async function checkCelebs(name) {
   }
 }
 
+// ---------- 神煞标注回归：标题可点解释 + 每项吉/中/凶徽标不得静默删除 ----------
+function checkShenShaLabel() {
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const data = fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8');
+  for (const c of ['sk-good', 'sk-bad', 'sk-mid']) {
+    if (!html.includes(c)) errors.push(`[回归] 神煞分类徽标 CSS 缺失: .${c}`);
+  }
+  if (!data.includes('SHENSHA_KIND')) errors.push('[回归] data.js 缺少 SHENSHA_KIND 神煞吉凶分类表');
+  for (const k of ['天乙贵人','文昌贵人','禄神','将星','桃花','羊刃']) {
+    if (!new RegExp(`'${k}':'(吉|中|凶)'`).test(data)) errors.push(`[回归] SHENSHA_KIND 未给「${k}」标注吉/中/凶`);
+  }
+  if (!/SHENSHA_KIND\[s\]/.test(html)) errors.push('[回归] 命盘神煞渲染未读取 SHENSHA_KIND 分类(内容标注丢失)');
+  if (!/onclick="showWordTip\(event,'神煞'\)"/.test(html)) errors.push('[回归] 神煞标题未改为可点解释的统一标注样式');
+}
+
 (async () => {
   syntaxCheck();
   zodiacKeyCheck();
   guaKeyCheck();
+  checkShenShaLabel();
   // 首屏-无出生信息：验证「首次访问即出今日黄历+今日吃什么+起卦、无需推算」（本次需求核心）
   await checkPeek('首屏-无出生信息');
   // 首页-无出生信息：验证「进首页即出今日黄历+今日吃什么+起卦、无需推算」(本次需求核心)
