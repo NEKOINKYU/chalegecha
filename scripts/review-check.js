@@ -154,10 +154,41 @@ function checkScenario(name, birth) {
   });
 }
 
+// 首页-无出生信息：直接 render()（enterApp 无存档分支的原语），应即时出今日黄历+今日吃什么+起卦，不崩溃、不泄露命盘/星盘
+function checkHome(name) {
+  const window = loadDom();
+  try { window.render(); }
+  catch (e) { errors.push(`[D1/D4] 场景「${name}」无出生信息 render 抛异常(白屏): ${(e.stack||e.message).slice(0,120)}`); }
+  return new Promise(res => {
+    setTimeout(() => {
+      const app = window.document.getElementById('app');
+      const txt = app ? app.textContent : '';
+      if (/推算出错了/.test(txt)) {
+        const sub = (txt.match(/推算出错了([\s\S]*?)$/)||[])[1]||'';
+        errors.push(`[D1/D4] 场景「${name}」无出生信息 render 崩溃(白屏): ${sub.trim().slice(0,120)}`);
+      }
+      if (!/今日|黄历/.test(txt)) errors.push(`[marker] 场景「${name}」无出生信息未渲染今日黄历`);
+      if (!/今天想吃什么/.test(txt)) errors.push(`[marker] 场景「${name}」无出生信息未渲染「今日吃什么」(应在首页直接可见)`);
+      if (!/起卦/.test(txt)) errors.push(`[marker] 场景「${name}」无出生信息未渲染起卦入口`);
+      if (/命盘/.test(txt)) errors.push(`[D5] 场景「${name}」无出生信息却出现命盘 tab(应推算后才解锁)`);
+      if (/星盘/.test(txt)) errors.push(`[D5] 场景「${name}」无出生信息却出现星盘 tab(应推算后才解锁)`);
+      try {
+        if (window.rollGua) { window.rollGua();
+          const gtxt=(window.document.getElementById('guaBox')||{}).textContent||'';
+          if(!/意境/.test(gtxt)) errors.push(`[D2/运行时] 场景「${name}」rollGua 未渲染意境`);
+        }
+      } catch(e){ errors.push(`[D1] 场景「${name}」rollGua 抛异常: ${e.message}`); }
+      res();
+    }, 500);
+  });
+}
+
 (async () => {
   syntaxCheck();
   zodiacKeyCheck();
   guaKeyCheck();
+  // 首页-无出生信息：验证「进首页即出今日黄历+今日吃什么+起卦、无需推算」(本次需求核心)
+  await checkHome('首页-无出生信息');
   // 三场景覆盖：用户生日(双鱼,完整) / 原 bug 星座(巨蟹,完整) / 仅月日
   await checkScenario('双鱼-完整', { y: 2002, m: 2, d: 19, h: 12, gender: 1, lat: 30.57, lng: 104.07, tz: 8 });
   await checkScenario('巨蟹-完整', { y: 1990, m: 7, d: 1, h: 10, gender: 0, lat: 31.23, lng: 121.47, tz: 8 });

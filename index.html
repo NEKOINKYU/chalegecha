@@ -359,7 +359,7 @@
     <div class="hero-kicker">每日宜忌 · 刚刚好的小指引</div>
     <h1 class="hero-title">查了个查</h1>
     <p class="hero-tag">八字用神 × 星盘 × 黄历 × 周易，每天给你一点刚刚好的小指引。</p>
-    <button class="hero-btn" id="heroBtn" onclick="agreeAndEnter()">我已知晓 · 开始推算 →</button>
+    <button class="hero-btn" id="heroBtn" onclick="agreeAndEnter()">我已知晓 · 进入首页 →</button>
     <p class="hero-hint">内容由算法生成，仅供消遣参考，不构成专业建议。出生信息仅保存在你的浏览器本地，不会上传。<span class="ver-chip" id="ver2"></span></p>
     <div class="peek" id="peek"></div>
   </div>
@@ -1526,8 +1526,8 @@ function saveBirth(){
   // 回车 = 开始推算（仅正文页内）
   document.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const m=document.getElementById('main'); if(m && !m.classList.contains('hidden')) runCalc(); } });
 
-  // 不自动推算：显示首页 Hero，等用户点【开始】
-  // （有存档 → 点「查看今天的推算」自动算今天；无存档 → 进入引导占位）
+  // 已同意过免责的老访客：直接进入首页（首页即出今日黄历+起卦+今日吃什么，无需推算）
+  try{ if(localStorage.getItem('zlhy_consent')==='1'){ enterApp(); } }catch(e){}
 
   // ===== 版本更新检测 =====
   // 每 10 分钟检测一次服务器上 version.txt，发现新版本就显示刷新提示
@@ -1574,8 +1574,10 @@ function enterApp(){
   document.getElementById('targetTime').value = `${pd(now.getHours())}:${pd(now.getMinutes())}`;
   let saved=null;
   try{ saved=JSON.parse(localStorage.getItem('zlhy_birth_v3')||'null'); }catch(e){}
-  if(saved && saved.y){ runCalc(); }
-  else { showPlaceholder(null); }
+  // 出生表单默认收起（首页以内容为主，想推算再展开）；有存档则展开
+  const fd=document.getElementById('formDetails'); if(fd) fd.open=!!(saved&&saved.y);
+  if(saved && saved.y){ runCalc(); }                                  // 有存档：直接进入个人排盘
+  else { try{ render(); }catch(err){ showPlaceholder(null); } }       // 无存档：首页即出今日黄历+起卦+今日吃什么（无需推算）
 }
 function enterIntro(){
   const intro=document.getElementById('intro');
