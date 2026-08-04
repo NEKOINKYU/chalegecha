@@ -154,7 +154,9 @@ function checkScenario(name, birth) {
   });
 }
 
-// 首页-无出生信息：直接 render()（enterApp 无存档分支的原语），应即时出今日黄历+今日吃什么+起卦，不崩溃、不泄露命盘/星盘
+// 首页/第二页(main)-无出生信息：直接 render()（enterApp 无存档分支的原语）。
+// 新设计：第二页为纯个人视图，无出生信息时出「我的今日」个人化占位(提示填信息)+起卦，
+// 不重复首屏通用黄历/吃什么(那些在首屏 peek 的 checkPeek 场景已覆盖)，不泄露命盘/星盘。
 function checkHome(name) {
   const window = loadDom();
   try { window.render(); }
@@ -167,8 +169,8 @@ function checkHome(name) {
         const sub = (txt.match(/推算出错了([\s\S]*?)$/)||[])[1]||'';
         errors.push(`[D1/D4] 场景「${name}」无出生信息 render 崩溃(白屏): ${sub.trim().slice(0,120)}`);
       }
-      if (!/今日|黄历/.test(txt)) errors.push(`[marker] 场景「${name}」无出生信息未渲染今日黄历`);
-      if (!/今天想吃什么/.test(txt)) errors.push(`[marker] 场景「${name}」无出生信息未渲染「今日吃什么」(应在首页直接可见)`);
+      if (!/今日|黄历/.test(txt)) errors.push(`[marker] 场景「${name}」无出生信息未渲染「我的今日」`);
+      if (!/专属你的今日指引|填左侧出生信息/.test(txt)) errors.push(`[marker] 场景「${name}」无出生信息未渲染个人化占位(应提示填出生信息)`);
       if (!/起卦/.test(txt)) errors.push(`[marker] 场景「${name}」无出生信息未渲染起卦入口`);
       if (/命盘/.test(txt)) errors.push(`[D5] 场景「${name}」无出生信息却出现命盘 tab(应推算后才解锁)`);
       if (/星盘/.test(txt)) errors.push(`[D5] 场景「${name}」无出生信息却出现星盘 tab(应推算后才解锁)`);

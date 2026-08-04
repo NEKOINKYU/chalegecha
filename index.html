@@ -924,18 +924,19 @@ function render(){
   const app = document.getElementById('app');
   const __H = `
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="today" onclick="switchTab('today')">${icon('today')}今日</button>
+    <button class="tab-btn active" data-tab="today" onclick="switchTab('today')">${icon('today')}我的今日</button>
     ${anyBirth?`<button class="tab-btn" data-tab="ming" onclick="switchTab('ming')">${icon('ming')}命盘</button>`:''}
     ${anyBirth?`<button class="tab-btn" data-tab="xing" onclick="switchTab('xing')">${icon('xing')}星盘</button>`:''}
     <button class="tab-btn" data-tab="gua" onclick="switchTab('gua')">📿 起卦</button>
   </nav>
   <div class="tab-panel active" data-tab="today">
 
-  <!-- ===== 今日黄历（合并：总结 + 宜忌 + 幸运色 + 卦，按是否填信息个性化） ===== -->
+  <!-- ===== 我的今日（个人向：用神/个人历/今日对你，不与首页通用黄历重复） ===== -->
+  ${canBazi && ys ? `
   <div class="card today-hero">
-    <h2>📅 今日黄历</h2>
-    <div class="lunar-line">${lunarStr} · ${shengXiao}年 · ${sign}座</div>
-    ${canBazi?`<div class="eight-char" style="margin-top:4px;justify-content:flex-start;padding-left:0">今日八字 ${colorBazi(eightChar)}</div>`:''}
+    <h2>🔮 我的今日</h2>
+    <div class="eight-char" style="margin-top:4px;justify-content:flex-start;padding-left:0">${colorBazi(bazi.str)}</div>
+    <div class="th-row" style="margin-top:8px"><span class="th-label">今日对你</span><span class="mini-detail">今日<b style="color:var(--accent)">${wx(GAN[L.getDayGan()])}</b>日「<b style="color:var(--accent)">${evalAgainstYongShen(GAN[L.getDayGan()],ys).rel||'中性'}</b>」</span></div>
 
     <div class="th-top">
       <div class="th-score" onclick="showScoreInfo('个人综合分怎么算', '${scoreMainWhy}')" role="button" title="点击查看打分规则"><div class="th-num">${total}</div><div class="th-unit">综合分</div></div>
@@ -944,27 +945,26 @@ function render(){
         <div class="th-date">${todayStr}</div>
       </div>
     </div>
-    <div class="th-plain">${plain}</div>
 
     <div class="th-row">
-      ${canBazi?`<span class="yiji-mini y">✓ 适合做</span>${fmtWords(yi,3)}`:`<span class="yiji-mini y">✓ 宜</span>${fmtWords(yi,3)}`}
-      ${canBazi?`<span class="yiji-mini n" style="margin-left:10px">✕ 不适合做</span>${fmtWords(ji,3)}`:`<span class="yiji-mini n" style="margin-left:10px">✕ 忌</span>${fmtWords(ji,3)}`}
+      <span class="yiji-mini y">✓ 适合做</span>${fmtWords(yi,3)}
+      <span class="yiji-mini n" style="margin-left:10px">✕ 不适合做</span>${fmtWords(ji,3)}
     </div>
     <div class="mini-detail" style="margin-top:4px">点词语可看大白话解释</div>
-    ${canBazi&&ys?`<div class="th-row" style="font-size:12px"><span class="yiji-mini" style="background:var(--accent-soft);color:var(--accent);border-color:var(--accent)">个人历</span><span class="mini-detail">今日${wx(GAN[L.getDayGan()])}日对你「${evalAgainstYongShen(GAN[L.getDayGan()],ys).rel||'中性'}」</span></div>`:''}
 
-    <div class="th-row"><span class="th-label">幸运色</span>${dressHtml}</div>
+    ${personalHtml?`<div style="margin-top:10px">${personalHtml}</div>`:''}
+
+    <div class="th-row" style="margin-top:8px"><span class="th-label">幸运色</span>${dressHtml}</div>
 
     <div id="quoteText" class="th-quote"></div>
   </div>
-
-  <!-- ===== 今天想吃什么（轻松趣味） ===== -->
-  <div class="card" style="border-left:3px solid var(--accent)">
-    <h2>🍜 今天想吃什么</h2>
-    <div class="plain-text" id="foodBox" style="font-size:20px;text-align:center;padding:16px 10px;font-weight:600;color:var(--ink)">${todayFood}</div>
-    <div class="mini-detail" style="text-align:center;margin-top:4px">${foodTip}</div>
-    <div style="text-align:center;margin-top:10px"><button class="btn btn-ghost" onclick="rerollFood()">🎲 换一个</button></div>
+  ` : `
+  <div class="card today-hero">
+    <h2>🔮 我的今日</h2>
+    <div class="ph-icon"><span class="ic">${icon('ming')}</span></div>
+    <div class="ph-sub" style="text-align:center">填左侧出生信息，生成专属你的今日指引（用神 · 个人历 · 今日对你）。</div>
   </div>
+  `}
 
   <div style="text-align:center;margin:16px 0 4px">
     <button class="btn btn-go rerun" onclick="var f=document.querySelector('.form-wrap'); if(f){f.scrollIntoView({behavior:'smooth'});}">↑ 改信息 / 换个日期再算</button>
