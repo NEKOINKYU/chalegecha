@@ -257,6 +257,8 @@ function checkShenShaLabel() {
   for (const c of ['sk-good', 'sk-bad', 'sk-mid']) {
     if (!html.includes(c)) errors.push(`[回归] 神煞分类徽标 CSS 缺失: .${c}`);
   }
+  if (!html.includes('sk-mean-list')) errors.push('[回归] 神煞含义常驻列表(.sk-mean-list)缺失——内容释义未标注');
+  if (!html.includes('sk-mean')) errors.push('[回归] 神煞含义条目(.sk-mean)缺失——内容释义未标注');
   if (!data.includes('SHENSHA_KIND')) errors.push('[回归] data.js 缺少 SHENSHA_KIND 神煞吉凶分类表');
   for (const k of ['天乙贵人','文昌贵人','禄神','将星','桃花','羊刃']) {
     if (!new RegExp(`'${k}':'(吉|中|凶)'`).test(data)) errors.push(`[回归] SHENSHA_KIND 未给「${k}」标注吉/中/凶`);
