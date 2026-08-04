@@ -290,12 +290,39 @@ async function checkShenShaMeaning(name) {
   if (list.querySelector('b[onclick]')) errors.push(`[回归] ${name}: 神煞释义词仍带 onclick(冗余点击)`);
 }
 
+// 袁天罡称骨白话化回归：data.js 须有 baihua 对照表(条数==poems)，命盘须常驻渲染 .cg-baihua(原文诗体保留、白话替代「点击看批语」)
+function checkChengGuBaihua() {
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const data = fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8');
+  if (!/CHENG_GU\s*:\s*\{[\s\S]*baihua\s*:/.test(data)) errors.push('[回归] data.js CHENG_GU 缺少 baihua 白话对照表(称骨批语白话化丢失)');
+  if (!html.includes('cg-baihua')) errors.push('[回归] 命盘称骨未渲染白话常驻块(.cg-baihua)');
+  if (!/CHENG_GU\.baihua\[chengGu\.cn\]/.test(html)) errors.push('[回归] 命盘称骨渲染未读取 CHENG_GU.baihua(白话未显示)');
+  const poems = (data.match(/poems\s*:\s*\{([\s\S]*?)\n  \}/) || [,''])[1];
+  const baihua = (data.match(/baihua\s*:\s*\{([\s\S]*?)\n  \}/) || [,''])[1];
+  const pCount = (poems.match(/'/g) || []).length / 2;
+  const bCount = (baihua.match(/'/g) || []).length / 2;
+  if (pCount !== bCount) errors.push(`[回归] 称骨 baihua(${bCount}条) 与 poems(${pCount}条) 数量不一致——有重量缺白话`);
+}
+
+async function checkChengGuBaihuaRender(name) {
+  const window = loadDom();
+  fillAndRun(window, { y: 1990, m: 6, d: 15, h: 12, gender: '男', lat: 30.67, lng: 104.06, tz: 8 });
+  await new Promise(res => setTimeout(res, 500)); // 等 runCalc 的 420ms 渲染完成
+  const app = window.document.getElementById('app');
+  const bh = app && app.querySelector('.cg-baihua');
+  if (!bh) { errors.push(`[回归] ${name}: 未渲染称骨白话常驻块(.cg-baihua)——白话不可见`); return; }
+  const t = (bh.textContent || '').trim();
+  if (t.length < 8) errors.push(`[回归] ${name}: 称骨白话内容过短(${t.length}字)，可能未渲染`);
+}
+
 (async () => {
   syntaxCheck();
   zodiacKeyCheck();
   guaKeyCheck();
   checkShenShaLabel();
   await checkShenShaMeaning('神煞含义常驻');
+  checkChengGuBaihua();
+  await checkChengGuBaihuaRender('称骨白话');
   // 首屏-无出生信息：验证「首次访问即出今日黄历+今日吃什么+起卦、无需推算」（本次需求核心）
   await checkPeek('首屏-无出生信息');
   // 首页-无出生信息：验证「进首页即出今日黄历+今日吃什么+起卦、无需推算」(本次需求核心)
