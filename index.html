@@ -251,6 +251,20 @@
   /* 首屏「今天做的小事」：去掉方框、调小，融进黄历卡（不影响点推算后的完整解读） */
   #introCards .th-plain{font-size:12.5px;line-height:1.6;color:var(--ink-2);background:transparent;border:none;border-radius:0;padding:4px 2px;margin:4px 0 10px}
   .th-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:9px 0}
+  /* 综合分说明弹窗 */
+  .th-score{cursor:pointer;position:relative;border-radius:12px;transition:background .15s}
+  .th-score:hover{background:var(--surface-2)}
+  .th-score::after{content:'?';position:absolute;top:-4px;right:-4px;width:16px;height:16px;line-height:16px;font-size:10px;text-align:center;border-radius:50%;background:var(--accent);color:#fff;opacity:0;transition:opacity .15s}
+  .th-score:hover::after{opacity:.9}
+  .score-modal-mask{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);padding:20px;backdrop-filter:blur(2px)}
+  .score-modal-mask.show{display:flex}
+  .score-modal-card{position:relative;width:100%;max-width:420px;background:var(--card);border:1px solid var(--line-2);border-radius:18px;padding:22px 22px 18px;box-shadow:0 18px 50px rgba(0,0,0,.28);animation:scorePop .22s var(--ease)}
+  @keyframes scorePop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+  .score-modal-close{position:absolute;top:8px;right:10px;width:30px;height:30px;border:none;background:transparent;font-size:22px;line-height:1;color:var(--ink-2);cursor:pointer;border-radius:8px}
+  .score-modal-close:hover{background:var(--surface-2)}
+  .score-modal-title{font-size:16px;margin:0 0 10px;color:var(--ink)}
+  .score-modal-body{font-size:13.5px;line-height:1.8;color:var(--ink-2)}
+  .score-modal-body b{color:var(--accent)}
   .th-label{font-size:12px;color:var(--sub);flex-shrink:0}
   .yiji-mini{font-size:12px;font-weight:700;margin-right:2px}
   .yiji-mini.y{color:var(--good)} .yiji-mini.n{color:var(--bad)}
@@ -899,6 +913,8 @@ function render(){
     personalHtml = `<div class="mini-detail">填出生信息后，这里会告诉你：黄历说「不宜」但你其实可以 / 黄历说「宜」但你最好避开的事。</div>`;
   }
 
+  // 综合分算法说明（点击弹窗用）
+  const scoreMainWhy = `综合分由四个维度加权融合：<br>• 黄历（宜忌） ${huali} × 0.4 = ${(huali*0.4).toFixed(1)}<br>• 八字用神 ${baziScore} × 0.3 = ${(baziScore*0.3).toFixed(1)}<br>• 星座 ${signScore} × 0.2 = ${(signScore*0.2).toFixed(1)}<br>• 大运 ${dayunScore} × 0.1 = ${(dayunScore*0.1).toFixed(1)}<br>加总 ≈ <b>${total}</b> 分（四舍五入）。${canBazi&&ys?'已填出生信息，启用八字/大运维度；':'未填出生信息，八字/大运按中性参与；'}填得越全越准。`;
   const app = document.getElementById('app');
   const __H = `
   <nav class="tabs">
@@ -916,7 +932,7 @@ function render(){
     ${canBazi?`<div class="eight-char" style="margin-top:4px;justify-content:flex-start;padding-left:0">今日八字 ${colorBazi(eightChar)}</div>`:''}
 
     <div class="th-top">
-      <div class="th-score"><div class="th-num">${total}</div><div class="th-unit">综合分</div></div>
+      <div class="th-score" onclick="showScoreInfo('个人综合分怎么算', '${scoreMainWhy}')" role="button" title="点击查看打分规则"><div class="th-num">${total}</div><div class="th-unit">综合分</div></div>
       <div class="th-main">
         <div class="th-verdict ${vClass}">${verdict}</div>
         <div class="th-date">${todayStr}</div>
@@ -1344,6 +1360,11 @@ function renderHomePeek(){
     const smallThing = D.SMALL_THINGS[Math.floor(Math.random()*D.SMALL_THINGS.length)];
     // 首屏解读：下面已有「综合分+吉凶」「宜/忌两行」「幸运色」，故只保留「今天做的一件小事」，避免重复
     const plain = smallThing ? `✨ 今天可以做的一件小事：<b>${smallThing}</b>` : '';
+    // 综合分算法说明（点击弹窗用）
+    const yiN = yi.length, jiN = ji.length;
+    const rawH = 60 + yiN*2 - jiN*4;
+    const clampedH = Math.max(10, Math.min(95, rawH));
+    const scoreHomeWhy = `基础分 60，每一条「宜」+2、每一条「忌」−4，再夹在 10~95 之间。<br>今日宜 ${yiN} 条、忌 ${jiN} 条 → 60 + ${yiN}×2 − ${jiN}×4 = ${rawH}，夹到 ${clampedH}，四舍五入得 <b>${total}</b> 分。`;
     const dressHtml = `<div class="kv"><div><b>今日（${todayW}日）幸运色：</b>${todayC.name} ${todayC.colors.map(c=>`<span class="color-chip" style="background:${c}"></span>`).join('')}</div></div>`;
     // 今日吃什么（无个性化 → 按今日日干五行）
     const foodWX = todayW;
@@ -1357,7 +1378,7 @@ function renderHomePeek(){
         <div class="bazi-line">今日八字　${baziStr}</div>
         <div class="lunar-line hl">${lunarStr} · ${shengXiao}年 · ${sign}座</div>
         <div class="th-top">
-          <div class="th-score"><div class="th-num">${total}</div><div class="th-unit">综合分</div></div>
+          <div class="th-score" onclick="showScoreInfo('今日黄历 · 综合分怎么算', '${scoreHomeWhy}')" role="button" title="点击查看打分规则"><div class="th-num">${total}</div><div class="th-unit">综合分</div></div>
           <div class="th-main">
             <div class="th-verdict ${vClass}">${verdict}</div>
             <div class="th-date">${todayStr}</div>
@@ -1657,6 +1678,21 @@ function enterApp(){
   if(saved && saved.y){ runCalc(); }                                  // 有存档：直接进入个人排盘
   else { try{ render(); }catch(err){ showPlaceholder(null); } }       // 无存档：首页即出今日黄历+起卦+今日吃什么（无需推算）
 }
+/* 综合分说明弹窗 */
+function showScoreInfo(title, body){
+  const m=document.getElementById('scoreModal');
+  if(!m) return;
+  document.getElementById('scoreModalTitle').innerHTML=title||'综合分说明';
+  document.getElementById('scoreModalBody').innerHTML=body||'';
+  m.classList.add('show');
+}
+function hideScoreInfo(){
+  const m=document.getElementById('scoreModal');
+  if(m) m.classList.remove('show');
+}
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape'){ const m=document.getElementById('scoreModal'); if(m&&m.classList.contains('show')) hideScoreInfo(); }
+});
 function enterIntro(){
   const intro=document.getElementById('intro');
   const main=document.getElementById('main');
@@ -1665,5 +1701,14 @@ function enterIntro(){
   window.scrollTo({top:0,behavior:'auto'});
 }
 </script>
+
+<!-- 综合分说明弹窗 -->
+<div class="score-modal-mask" id="scoreModal" onclick="if(event.target===this)hideScoreInfo()">
+  <div class="score-modal-card">
+    <button class="score-modal-close" onclick="hideScoreInfo()" aria-label="关闭">×</button>
+    <h3 class="score-modal-title" id="scoreModalTitle"></h3>
+    <div class="score-modal-body" id="scoreModalBody"></div>
+  </div>
+</div>
 </body>
 </html>
