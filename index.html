@@ -1086,11 +1086,11 @@ function colorGZ(gz){
   }).join('');
 }
 function showWordTip(e, arg){
-  e.stopPropagation(); e.preventDefault();
+  if(e && e.stopPropagation){ e.stopPropagation(); e.preventDefault(); }
   // 兼容两种调用：传元素(fmtWords) 或 传字符串(命盘/星盘模板)
   var el = null, w = '';
   if(arg && arg.getBoundingClientRect){ el = arg; w = el.getAttribute('data-w') || ''; }
-  else { w = String(arg||''); el = e.target && e.target.closest ? e.target.closest('.yw') : null; }
+  else { w = String(arg||''); el = (e && e.currentTarget) || (e && e.target && e.target.closest ? e.target.closest('.yw') : null); }
   if(!el){ return; }
   if(!w){ w = el.getAttribute('data-w') || el.textContent.slice(0,8); }
   // 已展开→收起

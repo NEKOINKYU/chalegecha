@@ -267,11 +267,31 @@ function checkShenShaLabel() {
   if (!/onclick="showWordTip\(event,'神煞'\)"/.test(html)) errors.push('[回归] 神煞标题未改为可点解释的统一标注样式');
 }
 
+// 神煞点击回归：修复「神煞胶囊/释义项外层无 .yw 类 → showWordTip 找不到 el 静默 return → 点击无反应」
+// 修复前 el = e.target.closest('.yw') 命中 null 直接 return；修复后优先用 e.currentTarget(绑定 onclick 的元素本身)。
+// 这里直接调用 window.showWordTip 并传带 currentTarget 的模拟事件，断言能展开 .yw-detail 解释(否则即原 bug 回归)。
+async function checkShenShaClick(name) {
+  const window = loadDom();
+  fillAndRun(window, { y: 1990, m: 6, d: 15, h: 12, gender: '男', lat: 30.67, lng: 104.06, tz: 8 });
+  await new Promise(res => setTimeout(res, 500)); // 等 runCalc 的 420ms 渲染完成
+  const app = window.document.getElementById('app');
+  const capsule = app && app.querySelector('.shensha');
+  if (!capsule) { errors.push(`[回归] ${name}: 未找到神煞胶囊(.shensha)——无法验证点击展开`); return; }
+  const word = capsule.textContent.replace(/^(吉|中|凶)/, '').trim(); // 去掉徽标字(吉/中/凶)
+  try {
+    window.showWordTip({ currentTarget: capsule, target: capsule, stopPropagation(){}, preventDefault(){} }, word);
+  } catch (e) { errors.push(`[回归] ${name}: 点击神煞「${word}」调用 showWordTip 抛错: ${e.message}`); return; }
+  const detail = window.document.querySelector('.yw-detail');
+  if (!detail) { errors.push(`[回归] ${name}: 点击神煞「${word}」未展开解释(.yw-detail 缺失)——原「点了没反应」bug 回归`); return; }
+  if (!detail.textContent.includes(word)) errors.push(`[回归] ${name}: 神煞「${word}」展开的解释未含该词`);
+}
+
 (async () => {
   syntaxCheck();
   zodiacKeyCheck();
   guaKeyCheck();
   checkShenShaLabel();
+  await checkShenShaClick('神煞点击');
   // 首屏-无出生信息：验证「首次访问即出今日黄历+今日吃什么+起卦、无需推算」（本次需求核心）
   await checkPeek('首屏-无出生信息');
   // 首页-无出生信息：验证「进首页即出今日黄历+今日吃什么+起卦、无需推算」(本次需求核心)
