@@ -299,6 +299,7 @@ function checkChengGuBaihua() {
   if (!html.includes('cg-poem')) errors.push('[回归] 命盘称骨未渲染原批语常驻块(.cg-poem)——原批语被误删');
   if (!/CHENG_GU\.baihua\[chengGu\.cn\]/.test(html)) errors.push('[回归] 命盘称骨渲染未读取 CHENG_GU.baihua(白话未显示)');
   if (!/chengGu\.poem/.test(html)) errors.push('[回归] 命盘称骨渲染未读取 chengGu.poem(原批语未显示)');
+  if (!/<details class="cg-fold"><summary class="cg-weight">/.test(html)) errors.push('[回归] 命盘称骨原批语未收进收纳(<details class="cg-fold"> 缺失)——改回冗余双标签布局');
   const poems = (data.match(/poems\s*:\s*\{([\s\S]*?)\n  \}/) || [,''])[1];
   const baihua = (data.match(/baihua\s*:\s*\{([\s\S]*?)\n  \}/) || [,''])[1];
   const pCount = (poems.match(/'/g) || []).length / 2;
@@ -316,8 +317,10 @@ async function checkChengGuBaihuaRender(name) {
   const t = (bh.textContent || '').trim();
   if (t.length < 8) errors.push(`[回归] ${name}: 称骨白话内容过短(${t.length}字)，可能未渲染`);
   const poem = app.querySelector('.cg-poem');
-  if (!poem) { errors.push(`[回归] ${name}: 未渲染原批语常驻块(.cg-poem)——原批语诗体丢失`); return; }
-  const pt = (poem.textContent || '').replace('原批语', '').trim();
+  if (!poem) { errors.push(`[回归] ${name}: 未渲染原批语块(.cg-poem)——原批语诗体丢失`); return; }
+  const fold = poem.closest('details.cg-fold');
+  if (!fold) errors.push(`[回归] ${name}: 原批语未收进收纳(<details class="cg-fold">)——点开才看原批语的结构丢失`);
+  const pt = (poem.textContent || '').trim();
   if (pt.length < 8) errors.push(`[回归] ${name}: 原批语内容过短(${pt.length}字)，可能未渲染`);
 }
 
