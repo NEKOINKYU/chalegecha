@@ -267,23 +267,27 @@ function checkShenShaLabel() {
   if (!/onclick="showWordTip\(event,'神煞'\)"/.test(html)) errors.push('[回归] 神煞标题未改为可点解释的统一标注样式');
 }
 
-// 神煞点击回归：修复「神煞胶囊/释义项外层无 .yw 类 → showWordTip 找不到 el 静默 return → 点击无反应」
-// 修复前 el = e.target.closest('.yw') 命中 null 直接 return；修复后优先用 e.currentTarget(绑定 onclick 的元素本身)。
-// 这里直接调用 window.showWordTip 并传带 currentTarget 的模拟事件，断言能展开 .yw-detail 解释(否则即原 bug 回归)。
-async function checkShenShaClick(name) {
+// 神煞含义必须常驻可见(无需点击)：含义已在下方 .sk-mean-list 直接渲染；
+// 同时神煞胶囊/释义词不再可点(含义已常驻，点按为冗余虚假入口)，断言 .shensha 无 onclick、释义词 <b> 无 onclick。
+async function checkShenShaMeaning(name) {
   const window = loadDom();
   fillAndRun(window, { y: 1990, m: 6, d: 15, h: 12, gender: '男', lat: 30.67, lng: 104.06, tz: 8 });
   await new Promise(res => setTimeout(res, 500)); // 等 runCalc 的 420ms 渲染完成
   const app = window.document.getElementById('app');
-  const capsule = app && app.querySelector('.shensha');
-  if (!capsule) { errors.push(`[回归] ${name}: 未找到神煞胶囊(.shensha)——无法验证点击展开`); return; }
-  const word = capsule.textContent.replace(/^(吉|中|凶)/, '').trim(); // 去掉徽标字(吉/中/凶)
-  try {
-    window.showWordTip({ currentTarget: capsule, target: capsule, stopPropagation(){}, preventDefault(){} }, word);
-  } catch (e) { errors.push(`[回归] ${name}: 点击神煞「${word}」调用 showWordTip 抛错: ${e.message}`); return; }
-  const detail = window.document.querySelector('.yw-detail');
-  if (!detail) { errors.push(`[回归] ${name}: 点击神煞「${word}」未展开解释(.yw-detail 缺失)——原「点了没反应」bug 回归`); return; }
-  if (!detail.textContent.includes(word)) errors.push(`[回归] ${name}: 神煞「${word}」展开的解释未含该词`);
+  const list = app && app.querySelector('.sk-mean-list');
+  if (!list) { errors.push(`[回归] ${name}: 未渲染神煞含义常驻列表(.sk-mean-list)——含义不可见`); return; }
+  const txt = list.textContent || '';
+  const caps = Array.from(app.querySelectorAll('.shensha'));
+  if (!caps.length) { errors.push(`[回归] ${name}: 未渲染任何神煞胶囊——无法验证含义常驻`); return; }
+  // 不写死具体神煞(不同出生算出不同神煞)：断言「出现的每个神煞都在常驻列表里有对应解释」
+  for (const c of caps) {
+    const w = (c.textContent || '').replace(/^(吉|中|凶)/, '').trim(); // 去掉徽标字
+    if (!w) continue;
+    if (!txt.includes(w)) errors.push(`[回归] ${name}: 神煞「${w}」已渲染胶囊但常驻含义列表缺失其解释(点按取消后必须常驻)`);
+  }
+  const capsule = app.querySelector('.shensha');
+  if (capsule && capsule.getAttribute('onclick')) errors.push(`[回归] ${name}: 神煞胶囊仍带 onclick(应为常驻释义，删除虚假可点入口)`);
+  if (list.querySelector('b[onclick]')) errors.push(`[回归] ${name}: 神煞释义词仍带 onclick(冗余点击)`);
 }
 
 (async () => {
@@ -291,7 +295,7 @@ async function checkShenShaClick(name) {
   zodiacKeyCheck();
   guaKeyCheck();
   checkShenShaLabel();
-  await checkShenShaClick('神煞点击');
+  await checkShenShaMeaning('神煞含义常驻');
   // 首屏-无出生信息：验证「首次访问即出今日黄历+今日吃什么+起卦、无需推算」（本次需求核心）
   await checkPeek('首屏-无出生信息');
   // 首页-无出生信息：验证「进首页即出今日黄历+今日吃什么+起卦、无需推算」(本次需求核心)
