@@ -1340,7 +1340,8 @@ function renderHomePeek(){
     else if(total>=45){verdict='小凶 · 宜守不宜攻';vClass='mid';}
     else {verdict='凶 · 谨慎行事，宜静不宜动';vClass='bad';}
     const smallThing = D.SMALL_THINGS[Math.floor(Math.random()*D.SMALL_THINGS.length)];
-    const plain = buildPlain(verdict, total, [], [], {delta:0}, sig, '中性', null, smallThing);
+    // 首屏解读：下面已有「综合分+吉凶」「宜/忌两行」「幸运色」，故只保留「今天做的一件小事」，避免重复
+    const plain = smallThing ? `✨ 今天可以做的一件小事：<b>${smallThing}</b>` : '';
     const dressHtml = `<div class="kv"><div><b>今日（${todayW}日）幸运色：</b>${todayC.name} ${todayC.colors.map(c=>`<span class="color-chip" style="background:${c}"></span>`).join('')}</div></div>`;
     // 今日吃什么（无个性化 → 按今日日干五行）
     const foodWX = todayW;
