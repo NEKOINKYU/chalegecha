@@ -1633,8 +1633,7 @@ function saveBirth(){
   // 回车 = 开始推算（仅正文页内）
   document.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const m=document.getElementById('main'); if(m && !m.classList.contains('hidden')) runCalc(); } });
 
-  // 已同意过免责的老访客：直接进入首页（首页即出今日黄历+起卦+今日吃什么，无需推算）
-  try{ if(localStorage.getItem('zlhy_consent')==='1'){ enterApp(); } }catch(e){}
+  // 首屏（.intro）是产品落地页，每次打开都先展示；点击标题「查了个查」后才进入正文
 
   // ===== 版本更新检测 =====
   // 每 10 分钟检测一次服务器上 version.txt，发现新版本就显示刷新提示
@@ -1660,7 +1659,6 @@ function saveBirth(){
 
 /* ========== 首页 ↔ 正文 切换 ========== */
 function agreeAndEnter(){
-  try{ localStorage.setItem('zlhy_consent','1'); }catch(e){}
   enterApp();
 }
 function enterApp(){
