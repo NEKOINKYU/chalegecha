@@ -912,16 +912,8 @@ function render(){
   const foodTip = (D.FOOD_WX_TIP && D.FOOD_WX_TIP[foodWX]) ? `（今日五行喜【${foodWX}】——${D.FOOD_WX_TIP[foodWX]}）` : '';
   const plain = buildPlain(verdict, total, yi, ji, hasBirth&&ys?evalAgainstYongShen(GAN[L.getDayGan()],ys):{delta:0}, sig, dressXiName, daYun, smallThing);
 
-  /* ---- 个人修正（黄历 vs 命盘） ---- */
-  let personalHtml = '';
-  if(canBazi && ys){
-    const pa = personalAdjust(yi, ji, ys);
-    personalHtml = pa.length
-      ? pa.map(p=>`<div class="${p.cls}">• ${p.text}</div>`).join('')
-      : `<div class="mini-detail">今天黄历与你的命盘不冲突——按黄历行事即可。</div>`;
-  } else {
-    personalHtml = `<div class="mini-detail">填出生信息后，这里会告诉你：黄历说「不宜」但你其实可以 / 黄历说「宜」但你最好避开的事。</div>`;
-  }
+  /* ---- 个人化宜忌：用神修正黄历宜忌，直接并入「适合做/不适合做」，不再单列冗长修正说明 ---- */
+  const pYJ = (canBazi && ys) ? personalYiJi(yi, ji, ys) : {pYi:(yi||[]), pJi:(ji||[])};
 
   // 综合分算法说明（点击弹窗用）
   const scoreMainWhy = `综合分由四个维度加权融合：<br>• 黄历（宜忌） ${huali} × 0.4 = ${(huali*0.4).toFixed(1)}<br>• 八字用神 ${baziScore} × 0.3 = ${(baziScore*0.3).toFixed(1)}<br>• 星座 ${signScore} × 0.2 = ${(signScore*0.2).toFixed(1)}<br>• 大运 ${dayunScore} × 0.1 = ${(dayunScore*0.1).toFixed(1)}<br>加总 ≈ <b>${total}</b> 分（四舍五入）。${canBazi&&ys?'已填出生信息，启用八字/大运维度；':'未填出生信息，八字/大运按中性参与；'}填得越全越准。`;
@@ -950,13 +942,11 @@ function render(){
       </div>
     </div>
 
-    <div class="th-row">
-      <span class="yiji-mini y">✓ 适合做</span>${fmtWords(yi,3)}
-      <span class="yiji-mini n" style="margin-left:10px">✕ 不适合做</span>${fmtWords(ji,3)}
+    <div class="th-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+      <div><span class="yiji-mini y">✓ 适合做</span>${fmtWords(pYJ.pYi,3)}</div>
+      <div><span class="yiji-mini n">✕ 不适合做</span>${fmtWords(pYJ.pJi,3)}</div>
     </div>
     <div class="mini-detail" style="margin-top:4px">点词语可看大白话解释</div>
-
-    ${personalHtml?`<div style="margin-top:10px">${personalHtml}</div>`:''}
 
     <div class="th-row" style="margin-top:8px"><span class="th-label">幸运色</span>${dressHtml}</div>
 
@@ -1171,18 +1161,21 @@ function signDaily(todayW, signElem){
   if(SHENG[signElem]===todayW) return {rel:'你生日（耗泄）', tip:'今天适合付出输出，别勉强自己', cls:'mid-t'};
   return {rel:'你克当日（得势）', tip:'今天你有主动权，抓住机会', cls:'good-t'};
 }
-/* ================= 个人修正：黄历宜忌 vs 你的喜用神 ================= */
-function personalAdjust(yi, ji, ys){
-  const out = [];
-  ji.forEach(w=>{
+/* ================= 个人化宜忌：用神修正黄历宜忌，直接给出「适合做/不适合做」清单 ================= */
+function personalYiJi(yi, ji, ys){
+  if(!ys || !ys.xi.length) return {pYi:(yi||[]).slice(), pJi:(ji||[]).slice()};
+  const pYi = [], pJi = [];
+  // 黄历忌：五行合喜用神 → 你其实能做 → 归适合做；否则 → 不适合做
+  (ji||[]).forEach(w=>{
     const el = D.YIJI_WUXING[w];
-    if(el && ys.xi.includes(el)) out.push({cls:'good-t', text:`黄历忌「${w}」（${wx(el)}类）——但这正合你的喜用神，你不是不能做，挑个吉时就行`});
+    if(el && ys.xi.includes(el)) pYi.push(w); else pJi.push(w);
   });
-  yi.forEach(w=>{
+  // 黄历宜：五行撞忌神 → 你最好避 → 归不适合做；否则 → 适合做
+  (yi||[]).forEach(w=>{
     const el = D.YIJI_WUXING[w];
-    if(el && ys.ji.includes(el)) out.push({cls:'bad-t', text:`黄历宜「${w}」（${wx(el)}类）——但这撞你的忌神，别人能做，你最好缓一缓或换个方式`});
+    if(el && ys.ji.includes(el)) pJi.push(w); else pYi.push(w);
   });
-  return out.slice(0,4);
+  return {pYi, pJi};
 }
 
 function buildPlain(verdict, total, yi, ji, ev, sig, dressName, daYun, smallThing){
