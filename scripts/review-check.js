@@ -144,10 +144,20 @@ function checkScenario(name, birth) {
       if (!/今日|黄历/.test(txt)) errors.push(`[marker] 场景「${name}」未渲染今日模块`);
       // 回归：带出生信息时「我的今日」应把宜忌修正直接并入「适合做/不适合做」，不得再单列「黄历忌「/黄历宜「」冗长说明
       if (/黄历忌「|黄历宜「/.test(txt)) errors.push(`[回归] 场景「${name}」仍渲染黄历宜忌修正冗长说明(应并入适合做/不适合做两行)`);
-      // 回归：rerun 入口(改信息/换个日期再算)必须常驻在 tab-panel 之外，切到命盘/星盘时仍可见
+      // 回归：rerun 入口(改信息/换个日期再算)必须常驻在 tab-panel 之外、且位于各面板之后(内容底部)，
+      //        切到命盘/星盘滚到底仍可点；不能放到 tabs 下方顶部(本末倒置)
       const rb = window.document.querySelector('.rerun-bar');
-      if (!rb) errors.push(`[回归] 场景「${name}」未渲染常驻 rerun 入口(改信息/换个日期再算)`);
-      else if (rb.closest('.tab-panel')) errors.push(`[回归] 场景「${name}」rerun 入口仍嵌在 tab-panel 内(切到命盘/星盘时不可见)`);
+      if (!rb) {
+        errors.push(`[回归] 场景「${name}」未渲染常驻 rerun 入口(改信息/换个日期再算)`);
+      } else if (rb.closest('.tab-panel')) {
+        errors.push(`[回归] 场景「${name}」rerun 入口仍嵌在 tab-panel 内(切到命盘/星盘时不可见)`);
+      } else {
+        const panels = window.document.querySelectorAll('.tab-panel');
+        const lastPanel = panels[panels.length - 1];
+        if (lastPanel && (rb.compareDocumentPosition(lastPanel) & window.Node.DOCUMENT_POSITION_FOLLOWING)) {
+          errors.push(`[回归] 场景「${name}」rerun 入口排在面板之前(应置于各 Tab 内容底部，滚动到底才出现)`);
+        }
+      }
       res();
     }, 700);
   });

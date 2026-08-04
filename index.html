@@ -286,7 +286,7 @@
 
   /* ============ Tab 导航 ============ */
   .tabs{position:sticky;top:64px;z-index:5;display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px;margin:4px 0 18px;box-shadow:var(--shadow);overflow-x:auto}
-  .rerun-bar{text-align:center;margin:0 0 14px}
+  .rerun-bar{text-align:center;margin:18px 0 14px}
   .tab-btn{flex:1;min-width:74px;white-space:nowrap;border:none;background:transparent;color:var(--sub);font-size:13.5px;font-weight:600;padding:9px 10px;border-radius:999px;cursor:pointer;transition:all .24s var(--ease)}
   .tab-btn:hover{color:var(--ink);background:var(--surface-2)}
   .tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--accent-ink);box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 34%,transparent)}
@@ -925,7 +925,6 @@ function render(){
     ${anyBirth?`<button class="tab-btn" data-tab="ming" onclick="switchTab('ming')">${icon('ming')}命盘</button>`:''}
     ${anyBirth?`<button class="tab-btn" data-tab="xing" onclick="switchTab('xing')">${icon('xing')}星盘</button>`:''}
   </nav>
-  ${hasRun?`<div class="rerun-bar"><button class="btn btn-go rerun" onclick="var f=document.querySelector('.form-wrap'); if(f){f.scrollIntoView({behavior:'smooth'});}">↑ 改信息 / 换个日期再算</button></div>`:''}
   <div class="tab-panel active" data-tab="today">
 
   <!-- ===== 我的今日（个人向：用神/个人历/今日对你，不与首页通用黄历重复） ===== -->
@@ -1004,6 +1003,8 @@ function render(){
   </div>
   </div>
   `:''}
+
+  ${hasRun?`<div class="rerun-bar"><button class="btn btn-go rerun" onclick="var f=document.querySelector('.form-wrap'); if(f){f.scrollIntoView({behavior:'smooth'});}">↑ 改信息 / 换个日期再算</button></div>`:''}
 
   `;
   app.innerHTML = deEmoji(__H);
