@@ -250,7 +250,7 @@ async function checkCelebs(name) {
   }
 }
 
-// ---------- 神煞标注回归：标题可点解释 + 每项吉/中/凶徽标不得静默删除 ----------
+// ---------- 神煞标注回归：标题可点解释 + 每项吉/中/凶徽标 + 全量字典/释义不得静默删除 ----------
 function checkShenShaLabel() {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const data = fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8');
@@ -260,13 +260,24 @@ function checkShenShaLabel() {
   if (!html.includes('sk-mean-list')) errors.push('[回归] 神煞含义常驻列表(.sk-mean-list)缺失——内容释义未标注');
   if (!html.includes('sk-mean')) errors.push('[回归] 神煞含义条目(.sk-mean)缺失——内容释义未标注');
   if (!data.includes('SHENSHA_KIND')) errors.push('[回归] data.js 缺少 SHENSHA_KIND 神煞吉凶分类表');
-  for (const k of ['天乙贵人','文昌贵人','禄神','将星','桃花','羊刃']) {
+  // 完整神煞名单：每个都必须在 SHENSHA_KIND 标吉/中/凶，且 ASTRO_DICT 有白话释义
+  const ALL = ['天乙贵人','文昌贵人','禄神','福星贵人','太极贵人','国印贵人','金舆','将星','华盖','天德','月德','红鸾','天喜','桃花','驿马','孤辰','寡宿','空亡','羊刃','劫煞','亡神','灾煞'];
+  const astroBlock = (data.match(/ASTRO_DICT:\s*\{([\s\S]*?)\n\},\s*\n/) || [,''])[1];
+  for (const k of ALL) {
     if (!new RegExp(`'${k}':'(吉|中|凶)'`).test(data)) errors.push(`[回归] SHENSHA_KIND 未给「${k}」标注吉/中/凶`);
+    if (!astroBlock.includes(`'${k}':`)) errors.push(`[回归] ASTRO_DICT 缺少「${k}」白话释义`);
+  }
+  // 查法字典完整性：新扩充神煞的查表必须存在（缺一个 render 就会出「暂无可查释义」）
+  for (const d of ['FU_XING','TAI_JI','GUO_YIN','JIN_YU','YI_MA','HUA_GAI','JIE_SHA','WANG_SHEN','ZAI_SHA','GU_CHEN','GUA_SU','TIAN_DE','YUE_DE','HONG_LUAN','TIAN_XI']) {
+    if (!new RegExp(`^\\s*${d}:`, 'm').test(data)) errors.push(`[回归] data.js 缺少神煞查法字典 ${d}`);
   }
   if (!/SHENSHA_KIND\[o\.base\]/.test(html)) errors.push('[回归] 命盘神煞渲染未读取 SHENSHA_KIND 分类(内容标注丢失)');
-  // 桃花取两派（年支/日支）；将星只取主派（年支）
-  if (!html.includes("'桃花·年支'") || !html.includes("'桃花·日支'")) errors.push('[回归] 桃花未同时计算 年支派/日支派 两派');
-  if (!html.includes("'将星·年支'")) errors.push('[回归] 将星未计算 年支派（主派）');
+  // 分层展示：折叠容器必须存在
+  if (!html.includes('shensha-all')) errors.push('[回归] 缺少「全部神煞」折叠容器(.shensha-all)——分层展示未实现');
+  // 两派必须同时按 年支+日支 计算（源级锁定，防静默回退成单派）
+  for (const base of ['TAO_HUA','YI_MA','HUA_GAI','JIE_SHA','WANG_SHEN','ZAI_SHA','HONG_LUAN','TIAN_XI']) {
+    if (!html.includes(`twin(D.${base}`)) errors.push(`[回归] 「${base}」未同时按年支+日支两派计算(twin 调用缺失)`);
+  }
   if (!/onclick="showWordTip\(event,'神煞'\)"/.test(html)) errors.push('[回归] 神煞标题未改为可点解释的统一标注样式');
 }
 
@@ -277,9 +288,9 @@ async function checkShenShaMeaning(name) {
   fillAndRun(window, { y: 1990, m: 6, d: 15, h: 12, gender: '男', lat: 30.67, lng: 104.06, tz: 8 });
   await new Promise(res => setTimeout(res, 500)); // 等 runCalc 的 420ms 渲染完成
   const app = window.document.getElementById('app');
-  const list = app && app.querySelector('.sk-mean-list');
-  if (!list) { errors.push(`[回归] ${name}: 未渲染神煞含义常驻列表(.sk-mean-list)——含义不可见`); return; }
-  const txt = list.textContent || '';
+  const lists = app ? Array.from(app.querySelectorAll('.sk-mean-list')) : [];
+  if (!lists.length) { errors.push(`[回归] ${name}: 未渲染神煞含义常驻列表(.sk-mean-list)——含义不可见`); return; }
+  const txt = lists.map(l => l.textContent || '').join(''); // 主行 + 折叠内全部含义
   const caps = Array.from(app.querySelectorAll('.shensha'));
   if (!caps.length) { errors.push(`[回归] ${name}: 未渲染任何神煞胶囊——无法验证含义常驻`); return; }
   // 不写死具体神煞(不同出生算出不同神煞)：断言「出现的每个神煞都在常驻列表里有对应解释」
@@ -288,9 +299,11 @@ async function checkShenShaMeaning(name) {
     if (!w) continue;
     if (!txt.includes(w)) errors.push(`[回归] ${name}: 神煞「${w}」已渲染胶囊但常驻含义列表缺失其解释(点按取消后必须常驻)`);
   }
+  if ((app.innerHTML || '').includes('暂无可查释义')) errors.push(`[回归] ${name}: 出现神煞却显示「暂无可查释义」——ASTRO_DICT 缺该神煞白话`);
   const capsule = app.querySelector('.shensha');
   if (capsule && capsule.getAttribute('onclick')) errors.push(`[回归] ${name}: 神煞胶囊仍带 onclick(应为常驻释义，删除虚假可点入口)`);
-  if (list.querySelector('b[onclick]')) errors.push(`[回归] ${name}: 神煞释义词仍带 onclick(冗余点击)`);
+  const allMean = app.querySelectorAll('.sk-mean b');
+  for (const b of allMean) { if (b.getAttribute('onclick')) { errors.push(`[回归] ${name}: 神煞释义词仍带 onclick(冗余点击)`); break; } }
 }
 
 // 袁天罡称骨白话化回归：data.js 须有 baihua 对照表(条数==poems)，命盘须常驻渲染 .cg-poem(原批语诗体) 与 .cg-baihua(白话)，两者并存

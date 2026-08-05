@@ -151,6 +151,15 @@
   .sk-mean-list{margin:7px 0 0;display:flex;flex-direction:column;gap:4px}
   .sk-mean{font-size:12px;color:var(--sub);line-height:1.55}
   .sk-mean b{color:var(--text);font-weight:600}
+  /* 折叠「全部神煞」：默认收起，保持一眼清爽；点开看完整吉/中/凶分组 */
+  .shensha-all{margin-top:8px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+  .shensha-all>summary{cursor:pointer;padding:8px 12px;font-size:13px;font-weight:600;color:var(--accent);list-style:none;user-select:none}
+  .shensha-all>summary::-webkit-details-marker{display:none}
+  .shensha-all>summary::before{content:'▸ ';font-size:11px}
+  .shensha-all[open]>summary::before{content:'▾ '}
+  .shensha-all>summary:hover{background:var(--accent-soft)}
+  .shensha-all .sk-group{padding:8px 12px;border-top:1px solid var(--line)}
+  .shensha-all .sk-group-title{margin-bottom:5px;font-size:12px;color:var(--sub)}
   .cg-weight{font-size:15px;font-weight:800;color:var(--accent);letter-spacing:.5px;cursor:pointer;border-bottom:1px dashed color-mix(in srgb,var(--accent) 60%,transparent);vertical-align:baseline}
   .cg-weight .cg-caret{display:inline-block;font-size:10px;color:var(--sub);font-weight:400;margin-left:1px;transition:transform .2s var(--ease)}
   .cg-weight.open .cg-caret{transform:rotate(180deg)}
@@ -590,21 +599,51 @@ function getShenSha(pillars){
   const out = [];
   if(pillars.length<4 || pillars.some(p=>!p)) return out;
   const dayGan = pillars[2].charAt(0);
-  const zhis = pillars.map(p=>p.charAt(1));          // [年支,月支,日支,时支]
-  const yearZhi = zhis[0];
-  const dayZhi  = zhis[2];
+  const zhis = pillars.map(p=>p.charAt(1));            // [年支,月支,日支,时支]
+  const yearZhi = zhis[0], monthZhi = zhis[1], dayZhi = zhis[2];
   const PN = ['年','月','日','时'];
-  const add = (base, label, idx) => { if(idx>=0) out.push({base, label}); };
-  // —— 日主系（以日干为基准），标签带神煞所在物理柱位 ——
+  const idxZhi = t => zhis.findIndex(z => z === t);          // 按地支找所在柱
+  const idxAny = t => pillars.findIndex(p => p.indexOf(t) >= 0); // 按干或支找所在柱
+  const add = (base, idx) => { if(idx>=0) out.push({base, label: base+'·'+PN[idx]}); };
   let i;
-  if((i = zhis.findIndex(z => (D.TIAN_YI[dayGan]||[]).includes(z))) >= 0) add('天乙贵人', '天乙贵人·'+PN[i], i);
-  if((i = [2,3].find(k => zhis[k] === D.WEN_CHANG[dayGan])) !== undefined) add('文昌贵人', '文昌贵人·'+PN[i], i);
-  if((i = [2,3].find(k => zhis[k] === D.YANG_REN[dayGan]))  !== undefined) add('羊刃',     '羊刃·'+PN[i],     i);
-  if((i = [2,3].find(k => zhis[k] === D.LU_SHEN[dayGan]))   !== undefined) add('禄神',     '禄神·'+PN[i],     i);
-  // —— 将星只取主派（年支三合中神）；桃花取 年支派 + 日支派 两派 ——
-  if((i = zhis.findIndex(z => z === D.JIANG_XING[yearZhi])) >= 0) add('将星', '将星·年支', i);
-  if((i = zhis.findIndex(z => z === D.TAO_HUA[yearZhi]))    >= 0) add('桃花', '桃花·年支', i);
-  if((i = zhis.findIndex(z => z === D.TAO_HUA[dayZhi]))     >= 0) add('桃花', '桃花·日支', i);
+  // —— 日主派（以日干为基），落在日支/时支 ——
+  if((i = zhis.findIndex(z => (D.TIAN_YI[dayGan]||[]).includes(z))) >= 0) add('天乙贵人', i);
+  if((i = [2,3].find(k => zhis[k] === D.WEN_CHANG[dayGan])) !== undefined) add('文昌贵人', i);
+  if((i = [2,3].find(k => zhis[k] === D.YANG_REN[dayGan]))  !== undefined) add('羊刃', i);
+  if((i = [2,3].find(k => zhis[k] === D.LU_SHEN[dayGan]))   !== undefined) add('禄神', i);
+  if((i = [2,3].find(k => zhis[k] === D.FU_XING[dayGan]))   !== undefined) add('福星贵人', i);
+  if((i = [2,3].find(k => zhis[k] === D.GUO_YIN[dayGan]))   !== undefined) add('国印贵人', i);
+  if((i = [2,3].find(k => zhis[k] === D.JIN_YU[dayGan]))    !== undefined) add('金舆', i);
+  if((i = zhis.findIndex(z => (D.TAI_JI[dayGan]||[]).includes(z))) >= 0) add('太极贵人', i);
+  // —— 月支派（月令）——
+  if((i = idxAny(D.TIAN_DE[monthZhi])) >= 0) add('天德', i);
+  if((i = idxAny(D.YUE_DE[monthZhi]))  >= 0) add('月德', i);
+  // —— 年支三方派（仅年支）——
+  if((i = idxZhi(D.GU_CHEN[yearZhi])) >= 0) add('孤辰', i);
+  if((i = idxZhi(D.GUA_SU[yearZhi]))  >= 0) add('寡宿', i);
+  // —— 将星仅主派（年支三合中神）——
+  if((i = idxZhi(D.JIANG_XING[yearZhi])) >= 0) add('将星', i);
+  // —— 三合局派 / 婚姻派：年支 + 日支 两派都算 ——
+  const twin = (dict, base) => {
+    if((i = idxZhi(dict[yearZhi])) >= 0) add(base, i);
+    if((i = idxZhi(dict[dayZhi]))  >= 0) add(base, i);
+  };
+  twin(D.TAO_HUA,  '桃花');
+  twin(D.YI_MA,    '驿马');
+  twin(D.HUA_GAI,  '华盖');
+  twin(D.JIE_SHA,  '劫煞');
+  twin(D.WANG_SHEN,'亡神');
+  twin(D.ZAI_SHA,  '灾煞');
+  twin(D.HONG_LUAN,'红鸾');
+  twin(D.TIAN_XI,  '天喜');
+  // —— 空亡：日柱旬空，逐柱标（落在哪柱，哪柱空）——
+  const ZS = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  const gN = '甲乙丙丁戊己庚辛壬癸'.indexOf(dayGan)+1;
+  const zN = ZS.indexOf(dayZhi)+1;
+  const headZ = ((zN-(gN-1)-1)%12+12)%12+1;          // 旬首支(1-based)
+  const inXun = new Set(); for(let k=0;k<10;k++) inXun.add((headZ-1+k)%12+1);
+  const kong = ZS.filter((_,idx)=>!inXun.has(idx+1));
+  zhis.forEach((z,idx)=>{ if(kong.includes(z)) add('空亡', idx); });
   return out;
 }
 // 命盘顶部「一眼读懂你」：基于日主五行 + 身强/身弱，生成几句话的情绪价值总结
@@ -886,7 +925,7 @@ function render(){
   const liuYao = L.getLiuYao();
 
   /* ---- 八字个性化 ---- */
-  let bazi = null, ys = null, daYun = null, shensha = [], chengGu = null, baziScore = 60, signScore = 60, dayunScore = 60;
+  let bazi = null, ys = null, daYun = null, shensha = [], shenshaMain = [], shenshaRest = [], chengGu = null, baziScore = 60, signScore = 60, dayunScore = 60;
   if(canBazi){
     const birthSolar = (h>=0) ? Solar.fromYmdHms(y,m,d,h,0,0) : Solar.fromYmdHms(y,m,d,12,0,0);
     const bc = birthSolar.getLunar().getEightChar();
@@ -904,6 +943,9 @@ function render(){
     const score = strengthScore(pillars, dayGan);
     ys = deriveYongShen(pillars, dayGan, score);
     shensha = getShenSha(pillars);
+    const MAIN_SHENSHA = ['天乙贵人','文昌贵人','羊刃','禄神','将星','桃花']; // 主6：一眼可见
+    shenshaMain = shensha.filter(o=>MAIN_SHENSHA.includes(o.base));
+    shenshaRest = shensha.filter(o=>!MAIN_SHENSHA.includes(o.base));
     bazi = {
       str, wuxing, dayGan, dayZhi, me, score, hourUnknown: h<0,
       taiYuan: fullPillars ? bc.getTaiYuan() : null,
@@ -1124,8 +1166,23 @@ function render(){
         <div><b><span class="yw" onclick="showWordTip(event,'喜用神')">喜用神</span>：</b>${ys.xi.map(wx).join('、')}　<b><span class="yw" onclick="showWordTip(event,'忌神')">忌神</span>：</b>${ys.ji.map(wx).join('、')}</div>
         <div><b><span class="yw" onclick="showWordTip(event,'五行分布')">五行分布</span>：</b>${Object.entries(bazi.wuxing).map(([k,v])=>`${wx(k)}${v}`).join(' · ')}　<b>缺：</b>${missingWuxing(bazi.wuxing).map(wx).join('、')||'无'}</div>
         ${chengGu?`<div><b><span class="yw" onclick="showWordTip(event,'袁天罡称骨')">袁天罡称骨</span>：</b><span class="cg-weight" onclick="var p=document.getElementById('cgPoem'); if(p){p.hidden=!p.hidden; this.classList.toggle('open');}" role="button" tabindex="0">⚖️ ${chengGu.cn}<span class="cg-caret">▾</span></span><span class="cg-baihua">：${escHtml(D.CHENG_GU.baihua[chengGu.cn]||'')}</span>${chengGu.poem?`<div class="cg-poem" id="cgPoem" hidden>${escHtml(chengGu.poem)}</div>`:''}</div>`:(canBazi?`<div><b><span class="yw" onclick="showWordTip(event,'袁天罡称骨')">袁天罡称骨</span>：</b><span class="mini-detail">需出生时辰才能称骨</span></div>`:'')}
-        ${shensha.length?`<div><b><span class="yw" onclick="showWordTip(event,'神煞')">神煞</span>：</b>${shensha.map(o=>{const k=D.SHENSHA_KIND[o.base]||'中';const cls=k==='吉'?'good':k==='凶'?'bad':'mid';return `<span class="shensha sk-${cls}"><b class="sk-tag">${k}</b>${escHtml(o.label)}</span>`;}).join('')} <span class="mini-detail">（后缀·年/月/日/时 指所在/基准地支，同一神煞落不同柱含义不同）</span></div>
-        <div class="sk-mean-list">${shensha.map(o=>`<div class="sk-mean"><b>${escHtml(o.label)}</b>：${escHtml(D.ASTRO_DICT[o.base]||'传统神煞，暂无可查释义')}</div>`).join('')}</div>`:''}
+        ${shensha.length?`
+        <div><b><span class="yw" onclick="showWordTip(event,'神煞')">神煞</span>：</b>${shenshaMain.map(o=>{const k=D.SHENSHA_KIND[o.base]||'中';const cls=k==='吉'?'good':k==='凶'?'bad':'mid';return `<span class="shensha sk-${cls}"><b class="sk-tag">${k}</b>${escHtml(o.label)}</span>`;}).join('')} <span class="mini-detail">（后缀·年/月/日/时 指所在/基准地支，同一神煞落不同柱含义不同）</span></div>
+        <div class="sk-mean-list">${shenshaMain.map(o=>`<div class="sk-mean"><b>${escHtml(o.label)}</b>：${escHtml(D.ASTRO_DICT[o.base]||'传统神煞，暂无可查释义')}</div>`).join('')}</div>
+        ${shenshaRest.length?`
+        <details class="shensha-all">
+          <summary>查看全部神煞（${shenshaRest.length}）</summary>
+          ${['吉','中','凶'].map(kind=>{
+            const grp = shenshaRest.filter(o=>(D.SHENSHA_KIND[o.base]||'中')===kind);
+            if(!grp.length) return '';
+            return `<div class="sk-group">
+              <div class="sk-group-title"><span class="shensha sk-${kind==='吉'?'good':kind==='凶'?'bad':'mid'}"><b class="sk-tag">${kind}</b></span> ${kind==='吉'?'吉神':kind==='凶'?'凶煞':'中性'}</div>
+              ${grp.map(o=>{const c2=D.SHENSHA_KIND[o.base]||'中';const cl2=c2==='吉'?'good':c2==='凶'?'bad':'mid';return `<span class="shensha sk-${cl2}"><b class="sk-tag">${c2}</b>${escHtml(o.label)}</span>`;}).join('')}
+              <div class="sk-mean-list">${grp.map(o=>`<div class="sk-mean"><b>${escHtml(o.label)}</b>：${escHtml(D.ASTRO_DICT[o.base]||'')}</div>`).join('')}</div>
+            </div>`;
+          }).join('')}
+        </details>`:''}
+        `:''}
         ${daYun?`<div><b><span class="yw" onclick="showWordTip(event,'大运')">当前大运</span>：</b>${colorGZ(daYun.gz)}（${daYun.startAge}岁 · ${daYun.startYear}年起）· ${daYun.rel}</div>`:''}
         ${bazi.taiYuan?`<div class="mini-detail"><span class="yw" onclick="showWordTip(event,'胎元')">胎元</span> ${bazi.taiYuan} · <span class="yw" onclick="showWordTip(event,'命宫')">命宫</span> ${bazi.mingGong} · <span class="yw" onclick="showWordTip(event,'身宫')">身宫</span> ${bazi.shenGong}</div>`:''}
       </div>
