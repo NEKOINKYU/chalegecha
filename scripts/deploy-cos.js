@@ -119,10 +119,9 @@ function collect() {
       Body: buf,
       ContentLength: buf.length,
       ContentType: MIME[ext] || 'application/octet-stream',
-      // 不设 Content-Disposition：HTML 默认就是 inline 渲染，显式设 'inline'
-      // 反而会让手机浏览器（Safari/微信）误判为下载。桌面浏览器不受影响。
-      // 之前加它是为了对抗沙箱代理对 *.myqcloud.com 的 attachment 注入（假象），
-      // 真实浏览器不需要这个头。
+      // 必须设 inline：COS 在没有 Content-Disposition 时默认返回
+      // attachment + x-cos-force-download:true，导致所有浏览器都下载。
+      ContentDisposition: 'inline',
       ACL: 'public-read',
     });
     console.log('  ↑', key);
