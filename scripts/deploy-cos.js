@@ -103,6 +103,9 @@ function collect() {
       Key: key,
       Body: fs.createReadStream(f),
       ContentType: MIME[ext] || 'application/octet-stream',
+      // 关键：覆盖 SDK 用 stream 上传时可能自动加的 Content-Disposition: attachment，
+      // 否则浏览器会把 index.html 当文件下载而非渲染网页
+      ContentDisposition: 'inline',
     });
     console.log('  ↑', key);
   }
