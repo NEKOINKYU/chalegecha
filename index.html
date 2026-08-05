@@ -101,6 +101,9 @@
   .form-block-label{font-size:12px;color:var(--sub);white-space:nowrap;flex-shrink:0;padding:0 6px 0 2px}
   .form-block select,.form-block input{border:none!important;background:transparent!important;box-shadow:none!important;padding:5px 4px!important;font-size:13px!important;min-width:0;flex:1}
   .form-block .btn{padding:4px 10px!important;font-size:12px!important;flex-shrink:0}
+  .date-quick{display:flex;gap:5px;flex-wrap:wrap;width:100%;margin-top:3px}
+  .date-quick .chip{padding:3px 10px;font-size:11px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:999px;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+  .date-quick .chip:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
   select,input[type=date],input[type=time],input[type=number]{padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2);font-size:13px;color:var(--ink);font-family:inherit;transition:border-color .2s ease,box-shadow .2s ease}
   input[type=number]{width:78px}
   select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
@@ -465,6 +468,13 @@
     <span class="form-block-label">推算</span>
     <input type="date" id="targetDate" title="可改任意日期">
     <input type="time" id="targetTime" title="推算时刻">
+    <div class="date-quick">
+      <button type="button" class="chip" onclick="jumpTarget(-7)">-7天</button>
+      <button type="button" class="chip" onclick="jumpTarget(-1)">昨天</button>
+      <button type="button" class="chip" onclick="jumpTarget(0)">今天</button>
+      <button type="button" class="chip" onclick="jumpTarget(1)">明天</button>
+      <button type="button" class="chip" onclick="jumpTarget(7)">+7天</button>
+    </div>
     <button class="btn btn-go" id="goBtn" onclick="runCalc()">开始推算</button>
     <button class="btn btn-ghost" data-icon="dice" onclick="fillExample()">随机示例</button>
     <button class="btn btn-clear" onclick="clearBirth()">清空</button>
@@ -699,6 +709,22 @@ function deEmoji(s){
   if(!s) return s;
   for(const e in EMOJI_MAP){ if(s.indexOf(e) >= 0) s = s.split(e).join(icon(EMOJI_MAP[e])); }
   return s;
+}
+// 推算日期快捷切换：days=0 回到今天；其余基于当前所选日期 ±days
+function jumpTarget(days){
+  const el = document.getElementById('targetDate');
+  let base;
+  if(days === 0){ base = new Date(); }
+  else {
+    const cur = el.value;
+    base = cur ? new Date(+cur.slice(0,4), +cur.slice(5,7)-1, +cur.slice(8,10)) : new Date();
+    base.setDate(base.getDate() + days);
+  }
+  const pd = n => String(n).padStart(2,'0');
+  el.value = `${base.getFullYear()}-${pd(base.getMonth()+1)}-${pd(base.getDate())}`;
+  const main = document.getElementById('main');
+  if(main && !main.classList.contains('hidden')){ try{ render(); }catch(e){ showPlaceholder(null); } }
+  else { markDirty(); }
 }
 
 function render(){
@@ -1640,10 +1666,19 @@ function saveBirth(){
     if(td) td.textContent = `${t.getMonth()+1}月${t.getDate()}日 · 农历${sl.getMonthInChinese()}月${sl.getDayInChinese()}`;
   }catch(e){}
 
-  // 所有表单项变动 → 只记录/提示，不自动推算
+  // 出生信息变动 → 只记录/提示，不自动重算
   ['birthYear','birthMonth','birthDay','birthHour','birthGender','birthCountry',
-   'birthProv','birthCity','birthArea','birthWorldCity','targetDate','targetTime']
+   'birthProv','birthCity','birthArea','birthWorldCity']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('change', markDirty); });
+  // 推算日期/时刻变动 → 正文内即时刷新（不用再点「开始推算」）
+  ['targetDate','targetTime'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('change', ()=>{
+      const main=document.getElementById('main');
+      if(main && !main.classList.contains('hidden')){ try{ render(); }catch(e){ showPlaceholder(null); } }
+      else { markDirty(); }
+    });
+  });
   // 回车 = 开始推算（仅正文页内）
   document.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const m=document.getElementById('main'); if(m && !m.classList.contains('hidden')) runCalc(); } });
 
@@ -1683,11 +1718,11 @@ function enterApp(){
   }
   window.scrollTo({top:0,behavior:'auto'});
   setTimeout(()=>{ if(intro) intro.style.display='none'; }, 520);
-  // 每次进正文都把推算日期刷新到今天（防止浏览器缓存/残留旧日期导致"关了再开内容没变"）
+  // 进正文：仅当推算日期/时刻为空时才补今天，保留用户改过的值（不再强制重置为今天）
   const now=new Date();
   const pd=n=>String(n).padStart(2,'0');
-  document.getElementById('targetDate').value = `${now.getFullYear()}-${pd(now.getMonth()+1)}-${pd(now.getDate())}`;
-  document.getElementById('targetTime').value = `${pd(now.getHours())}:${pd(now.getMinutes())}`;
+  if(!document.getElementById('targetDate').value) document.getElementById('targetDate').value = `${now.getFullYear()}-${pd(now.getMonth()+1)}-${pd(now.getDate())}`;
+  if(!document.getElementById('targetTime').value) document.getElementById('targetTime').value = `${pd(now.getHours())}:${pd(now.getMinutes())}`;
   let saved=null;
   try{ saved=JSON.parse(localStorage.getItem('zlhy_birth_v3')||'null'); }catch(e){}
   // 出生表单默认收起（首页以内容为主，想推算再展开）；有存档则展开
