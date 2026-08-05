@@ -414,6 +414,9 @@
   .update-banner .ic{width:16px;height:16px;margin:0;color:var(--accent)}
   .update-banner a{color:var(--accent);font-weight:700;text-decoration:none;cursor:pointer;margin-left:2px}
   .update-banner a:hover{text-decoration:underline}
+  /* 给 sticky topbar + tabs 留出空间，防止滚动定位到 tab 面板时内容被遮挡 */
+  #app{scroll-margin-top:110px}
+  .tab-panel{scroll-margin-top:110px}
 </style>
 <script data-goatcounter="https://nekoinkyu.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
@@ -1702,8 +1705,9 @@ function runCalc(){
     const app = document.getElementById('app');
     app.classList.remove('fade-in'); void app.offsetWidth; app.classList.add('fade-in');
     if(goBtn){ goBtn.disabled = false; goBtn.innerHTML = icon('refresh')+'重新推算'; goBtn.classList.add('rerun'); }
-    // 重算后稳稳滚回结果区最上面（#app 顶，tabs 吸顶对齐），避免 sticky tabs + 异步重渲染下 scrollIntoView 失效
-    window.scrollTo({top: Math.max(0, window.scrollY + app.getBoundingClientRect().top - 8), behavior:'smooth'});
+    // 重算后稳稳滚回结果区最上面（#app 顶），扣除 sticky topbar + tabs 高度避免遮挡
+    const stickyH = 110; // topbar ~60px + tabs ~50px
+    window.scrollTo({top: Math.max(0, window.scrollY + app.getBoundingClientRect().top - stickyH), behavior:'smooth'});
   }, 420);
 }
 
