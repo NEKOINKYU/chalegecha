@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * lunar-app 提交前校验（鹰眼标准）
+ * chalegecha 提交前校验（鹰眼标准）
  * 覆盖「四关」：
  *   1) 语法关   node --check data.js + 内联 JS
  *   2) 实跑关   jsdom 加载页面、注入出生信息、实跑 render，捕获白屏/运行时崩溃（D1 API误用 / D3 闭包 / D4 未实跑）
@@ -23,7 +23,7 @@ function loadJsdom() {
 }
 const { JSDOM, VirtualConsole } = loadJsdom();
 
-// ROOT 默认取项目根(lunar-app)；可通过 REVIEW_ROOT 指向副本做有效性验证（不碰仓库本体）
+// ROOT 默认取项目根(chalegecha)；可通过 REVIEW_ROOT 指向副本做有效性验证（不碰仓库本体）
 const ROOT = process.env.REVIEW_ROOT ? path.resolve(process.env.REVIEW_ROOT) : path.resolve(__dirname, '..');
 const errors = [];
 

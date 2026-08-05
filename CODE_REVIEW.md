@@ -1,8 +1,8 @@
-# lunar-app 代码审查标准（鹰眼标准）
+# chalegecha 代码审查标准（鹰眼标准）
 
 > 目标：**在缺陷到达生产环境（CloudStudio 部署）之前拦截**。
-> 核心教训：语法正确（`node --check` 通过）≠ 能运行。v1.83.01 三个真实事故全是“能跑过语法、跑不起来”的坑。
-> 适用：lunar-app 纯静态 PWA（index.html + data.js + lunar.js + lib/celestine.js）。
+> 核心教训：语法正确（`node --check` 通过）≠ 能运行。v1.83.01 三个真实事故全是"能跑过语法、跑不起来"的坑。
+> 适用：chalegecha 纯静态 PWA（index.html + data.js + lunar.js + lib/celestine.js）。
 
 ---
 
@@ -19,7 +19,7 @@
 
 ---
 
-## 二、lunar-app 高频缺陷清单（来自 v1.83.01 真实事故）
+## 二、chalegecha 高频缺陷清单（来自 v1.83.01 真实事故）
 
 ### D1. 第三方库 API 误用 —— 高危，直接白屏
 - **现象**：`TypeError: bc.getBaZiNaYin is not a function` → render 进命盘分支即抛异常 → 整页红色「推算出错了」。

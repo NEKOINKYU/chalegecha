@@ -1,5 +1,5 @@
 #!/bin/sh
-# lunar-app pre-commit 校验钩子（鹰眼标准）
+# chalegecha pre-commit 校验钩子（鹰眼标准）
 # 每次 commit 自动跑 scripts/review-check.js：语法 / 实跑渲染 / 字典键一致性
 # 非零退出即阻断提交，把缺陷拦在进库之前。
 # 紧急跳过：git commit --no-verify

@@ -1,7 +1,7 @@
-// 部署 lunar-app (v2) 到用户自有腾讯云 COS 静态网站托管
+// 部署 chalegecha (v2) 到用户自有腾讯云 COS 静态网站托管
 // 用法（在 WorkBuddy 内执行）：
 //   COS_SECRET_ID=xxx COS_SECRET_KEY=yyy COS_APPID=1234567890 \
-//   [COS_BUCKET=lunar-app-v2] [COS_REGION=ap-guangzhou] \
+//   [COS_BUCKET=chalegecha-v2] [COS_REGION=ap-guangzhou] \
 //   node scripts/deploy-cos.js
 const fs = require('fs');
 const path = require('path');
@@ -11,7 +11,7 @@ const SECRET_ID = process.env.COS_SECRET_ID;
 const SECRET_KEY = process.env.COS_SECRET_KEY;
 const APPID = process.env.COS_APPID;
 const REGION = process.env.COS_REGION || 'ap-guangzhou';
-const BASE = process.env.COS_BUCKET || 'lunar-app-v2';
+const BASE = process.env.COS_BUCKET || 'chalegecha-v2';
 // COS 桶名格式必须为 <自定义名>-<APPID>
 const BUCKET = `${BASE}-${APPID}`;
 
@@ -20,7 +20,7 @@ if (!SECRET_ID || !SECRET_KEY || !APPID) {
   process.exit(2);
 }
 
-const ROOT = path.resolve(__dirname, '..'); // ~/Desktop/lunar-app
+const ROOT = path.resolve(__dirname, '..'); // ~/Desktop/chalegecha
 const cos = new COS({ SecretId: SECRET_ID, SecretKey: SECRET_KEY });
 
 const MIME = {
