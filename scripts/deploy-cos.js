@@ -119,11 +119,10 @@ function collect() {
       Body: buf,
       ContentLength: buf.length,
       ContentType: MIME[ext] || 'application/octet-stream',
-      // 关键1：显式设 inline，避免浏览器把 index.html 当文件下载而非渲染网页。
-      //        必须用 Buffer（而非 fs.createReadStream）上传——SDK 在 stream 模式下会静默丢弃
-      //        ContentDisposition 等自定义响应头元数据，导致线上仍返回 attachment。
-      ContentDisposition: 'inline',
-      // 关键2：对象级 ACL 设 public-read（双保险，即使桶策略失效对象仍可读）。
+      // 不设 Content-Disposition：HTML 默认就是 inline 渲染，显式设 'inline'
+      // 反而会让手机浏览器（Safari/微信）误判为下载。桌面浏览器不受影响。
+      // 之前加它是为了对抗沙箱代理对 *.myqcloud.com 的 attachment 注入（假象），
+      // 真实浏览器不需要这个头。
       ACL: 'public-read',
     });
     console.log('  ↑', key);
