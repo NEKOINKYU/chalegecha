@@ -997,12 +997,7 @@ function render(){
 
   ${anyBirth?`
   <div class="tab-panel" data-tab="xing">
-  <!-- 星盘 -->
-  <div class="card">
-    <h2>🌟 星盘（celestine 引擎）${canChart?'· '+y+'-'+m+'-'+d:''}</h2>
-    ${astroHtml || `<div class="mini-detail">还差出生信息，暂时排不出完整星盘。${birthInfoText}　完整星盘需：出生年 / 月 / 日 / 时 + 出生地经纬度。</div>`}
-  </div>
-
+  <!-- 今日指引（一览，置顶） -->
   <div class="card">
     <h2>✨ ${userSign}座 · 今日指引</h2>
     ${canSign?`
@@ -1014,6 +1009,12 @@ function render(){
       <div style="margin-top:8px"><b>五行视角：</b>今日${wx(GAN[L.getDayGan()])}日对你（${uSig.element}象）「<span class="${sd.cls}">${sd.rel}</span>」——${sd.tip}</div>
     </div>
     `:`<div class="mini-detail">填出生月日（无需年份）即可看你的星座今日指引。${birthInfoText}</div>`}
+  </div>
+
+  <!-- 星盘 -->
+  <div class="card">
+    <h2>🌟 星盘（celestine 引擎）${canChart?'· '+y+'-'+m+'-'+d:''}</h2>
+    ${astroHtml || `<div class="mini-detail">还差出生信息，暂时排不出完整星盘。${birthInfoText}　完整星盘需：出生年 / 月 / 日 / 时 + 出生地经纬度。</div>`}
   </div>
   </div>
   `:''}
