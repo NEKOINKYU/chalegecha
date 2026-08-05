@@ -601,9 +601,8 @@ function getShenSha(pillars){
   if((i = [2,3].find(k => zhis[k] === D.WEN_CHANG[dayGan])) !== undefined) add('文昌贵人', '文昌贵人·'+PN[i], i);
   if((i = [2,3].find(k => zhis[k] === D.YANG_REN[dayGan]))  !== undefined) add('羊刃',     '羊刃·'+PN[i],     i);
   if((i = [2,3].find(k => zhis[k] === D.LU_SHEN[dayGan]))   !== undefined) add('禄神',     '禄神·'+PN[i],     i);
-  // —— 年支派 / 日支派 两派都算（桃花、将星）——
+  // —— 将星只取主派（年支三合中神）；桃花取 年支派 + 日支派 两派 ——
   if((i = zhis.findIndex(z => z === D.JIANG_XING[yearZhi])) >= 0) add('将星', '将星·年支', i);
-  if((i = zhis.findIndex(z => z === D.JIANG_XING[dayZhi]))  >= 0) add('将星', '将星·日支', i);
   if((i = zhis.findIndex(z => z === D.TAO_HUA[yearZhi]))    >= 0) add('桃花', '桃花·年支', i);
   if((i = zhis.findIndex(z => z === D.TAO_HUA[dayZhi]))     >= 0) add('桃花', '桃花·日支', i);
   return out;
