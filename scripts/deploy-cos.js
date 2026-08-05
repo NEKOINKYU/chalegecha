@@ -130,9 +130,12 @@ function collect() {
   }
 
   console.log('\n✅ 部署完成');
-  console.log('  静态网站访问域名(HTTP)：', `http://${BUCKET}.cos-website.${REGION}.myqcloud.com`);
-  console.log('  源站域名(HTTPS)：       ', `https://${BUCKET}.cos.${REGION}.myqcloud.com`);
-  console.log('\n  提示：默认域名无需备案即可访问；若要绑你自己的域名(如 xxx.com)，');
+  console.log('  移动端 / HTTPS（推荐）：');
+  console.log(`    https://${BUCKET}.cos.${REGION}.myqcloud.com/index.html`);
+  console.log('  PC 端（HTTP，默认首页）：');
+  console.log(`    http://${BUCKET}.cos-website.${REGION}.myqcloud.com`);
+  console.log('\n  ⚠️ 手机浏览器会拦截 HTTP 页面，手机请用上面 HTTPS 链接。');
+  console.log('  提示：默认域名无需备案即可访问；若要绑你自己的域名(如 xxx.com)，');
   console.log('  需在腾讯云「域名管理」加自定义域名 + 配 CDN，且国内节点需 ICP 备案。');
 })().catch((e) => {
   console.error('❌ 部署失败：', e && e.message ? e.message : e);
