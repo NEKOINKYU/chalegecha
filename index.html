@@ -1053,9 +1053,9 @@ function render(){
         let ascCN = null;
         if(lat!=null && lng!=null) ascCN = getSignCN(chart.angles.ascendant.formatted);
         tri = `<div class="astro-tri">
-          ☀️ 太阳座 <span class="yw" onclick="showWordTip(event,'${sunCN}座·太阳')">${sunCN}座</span>
-          ${moonCN?`· 🌙 月亮 <span class="yw" onclick="showWordTip(event,'${moonCN}座·月亮')">${moonCN}座</span>`:''}
-          · ⬆️ 上升 ${ascCN?`<span class="yw" onclick="showWordTip(event,'${ascCN}座·上升')">${ascCN}座</span>`:'—（选出生地后显示）'}
+          ☀️ 太阳座 <span class="yw" data-w="${escHtml(sunCN)}座·太阳" onclick="showWordTip(event,this)">${sunCN}座</span>
+          ${moonCN?`· 🌙 月亮 <span class="yw" data-w="${escHtml(moonCN)}座·月亮" onclick="showWordTip(event,this)">${moonCN}座</span>`:''}
+          · ⬆️ 上升 ${ascCN?`<span class="yw" data-w="${escHtml(ascCN)}座·上升" onclick="showWordTip(event,this)">${ascCN}座</span>`:'—（选出生地后显示）'}
         </div>`;
       }catch(e){}
       const PLANET_CN = {Sun:'太阳',Moon:'月亮',Mercury:'水星',Venus:'金星',Mars:'火星',Jupiter:'木星',Saturn:'土星',Uranus:'天王星',Neptune:'海王星',Pluto:'冥王星',Chiron:'凯龙星'};
@@ -1069,7 +1069,7 @@ function render(){
         angles = `<div class="mini-detail" style="margin-top:8px">未填出生地经纬度——已按成都坐标估算（<span class="yw" onclick="showWordTip(event,'上升星座')">上升</span>/宫位会随出生地变化，选城市或填经纬度更准）。</div>`;
       }
       const aspects = (chart.aspects.all||[]).filter(a=>PLANET_CN[a.body1]&&PLANET_CN[a.body2]).slice(0,8)
-        .map(a=>`${PLANET_CN[a.body1]} <span class="yw" onclick="showWordTip(event,'${ASPECT_CN[a.type]||a.type}')">${ASPECT_CN[a.type]||a.type}</span> ${PLANET_CN[a.body2]}`).join(' · ');
+        .map(a=>`${PLANET_CN[a.body1]} <span class="yw" data-w="${escHtml(ASPECT_CN[a.type]||a.type)}" onclick="showWordTip(event,this)">${ASPECT_CN[a.type]||a.type}</span> ${PLANET_CN[a.body2]}`).join(' · ');
       astroHtml = `
         ${tri}
         ${angles}
@@ -1120,7 +1120,7 @@ function render(){
     <div class="th-row" style="margin-top:8px"><span class="th-label">今日对你</span><span class="mini-detail">今日<b style="color:var(--accent)">${wx(GAN[L.getDayGan()])}</b>日「<b style="color:var(--accent)">${evalAgainstYongShen(GAN[L.getDayGan()],ys).rel||'中性'}</b>」</span></div>
 
     <div class="th-top">
-      <div class="th-score" onclick="showScoreInfo('个人综合分怎么算', '${scoreMainWhy}')" role="button" title="点击查看打分规则"><div class="th-num">${total}</div><div class="th-unit">综合分</div></div>
+      <div class="th-score" data-title="个人综合分怎么算" data-body="${escHtml(scoreMainWhy)}" onclick="showScoreInfo(this)" role="button" title="点击查看打分规则"><div class="th-num">${total}</div><div class="th-unit">综合分</div></div>
       <div class="th-main">
         <div class="th-verdict ${vClass}">${verdict}</div>
         <div class="th-date">${todayStr}</div>
@@ -1202,7 +1202,7 @@ function render(){
     <h2>✨ ${userSign}座 · 今日指引</h2>
     ${canSign?`
     <div class="horoscope">
-      <div><b><span class="yw" onclick="showWordTip(event,'${uSig.element}象')">${uSig.element}象</span>元素：</b>${uSig.element}（→五行${ELEM_TO_WUXING[uSig.element]}）　<b><span class="yw" onclick="showWordTip(event,'幸运色')">幸运色</span>：</b><span style="color:${uSig.color[0]}">■</span> <span style="color:${uSig.color[1]}">■</span></div>
+      <div><b><span class="yw" data-w="${escHtml(uSig.element)}象" onclick="showWordTip(event,this)">${uSig.element}象</span>元素：</b>${uSig.element}（→五行${ELEM_TO_WUXING[uSig.element]}）　<b><span class="yw" onclick="showWordTip(event,'幸运色')">幸运色</span>：</b><span style="color:${uSig.color[0]}">■</span> <span style="color:${uSig.color[1]}">■</span></div>
       <div style="margin-top:8px"><b>适合：</b>${uSig.like}</div>
       <div><b>避免：</b>${uSig.avoid}</div>
       <div style="margin-top:8px"><b>今日：</b>${uSig.today[0]}；${uSig.today[1]}</div>
@@ -1589,7 +1589,7 @@ function renderHomePeek(){
         <div class="bazi-line">今日八字　${baziStr}</div>
         <div class="lunar-line hl">${lunarStr} · ${shengXiao}年 · ${sign}座</div>
         <div class="th-top">
-          <div class="th-score" onclick="showScoreInfo('今日黄历 · 综合分怎么算', '${scoreHomeWhy}')" role="button" title="点击查看打分规则"><div class="th-num">${total}</div><div class="th-unit">综合分</div></div>
+          <div class="th-score" data-title="今日黄历 · 综合分怎么算" data-body="${escHtml(scoreHomeWhy)}" onclick="showScoreInfo(this)" role="button" title="点击查看打分规则"><div class="th-num">${total}</div><div class="th-unit">综合分</div></div>
           <div class="th-main">
             <div class="th-verdict ${vClass}">${verdict}</div>
             <div class="th-date">${todayStr}</div>
@@ -1615,7 +1615,7 @@ function renderHomePeek(){
       </div>
     `);
   }catch(err){
-    box.innerHTML = `<div class="card"><div class="ph-title">今日内容加载失败</div><div class="ph-sub">${String((err && err.message) || err)}</div></div>`;
+    box.innerHTML = `<div class="card"><div class="ph-title">今日内容加载失败</div><div class="ph-sub">${escHtml(err && err.message || err)}</div></div>`;
   }
 }
 
@@ -1898,6 +1898,11 @@ function enterApp(){
 }
 /* 综合分说明弹窗 */
 function showScoreInfo(title, body){
+  if(title && title.getBoundingClientRect){            // 元素模式：动态值改走 data-* 属性，避免拼进 onclick 的 JS 字符串（防属性/JS 注入）
+    const el = title;
+    title = el.getAttribute('data-title') || '综合分说明';
+    body  = el.getAttribute('data-body') || '';
+  }
   const m=document.getElementById('scoreModal');
   if(!m) return;
   document.getElementById('scoreModalTitle').innerHTML=title||'综合分说明';

@@ -361,6 +361,24 @@ async function checkChengGuBaihuaRender(name) {
   if (pt.length < 8) errors.push(`[回归] ${name}: 原批语内容过短(${pt.length}字)，可能未渲染`);
 }
 
+/* ============ 加固回归：异常 message 转义 + onclick 动态值去拼接 ============ */
+function checkHardening(){
+  const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  // 1) 异常 message 必须转义后才能进 innerHTML（拦截反射型 XSS）
+  if (/ph-sub">\$\{String\(\(err && err\.message\) \|\| err\)\}/.test(src))
+    errors.push('[回归][加固] 今日内容加载失败的错误 message 仍未转义(应改用 escHtml)——反射型 XSS 入口');
+  if (!/ph-sub">\$\{escHtml\(err && err\.message \|\| err\)\}/.test(src))
+    errors.push('[回归][加固] 今日内容加载失败的错误 message 未使用 escHtml 转义');
+  // 2) showWordTip 的动态值不得再拼进 onclick 的 JS 字符串字面量（escHtml 救不了 JS 字符串，须改 data-w 属性）
+  if (/showWordTip\(event,'\$\{/.test(src))
+    errors.push('[回归][加固] 仍存在 showWordTip(event,\'${...}\') 动态拼接——应改 data-w 属性 + onclick="showWordTip(event,this)"');
+  // 3) showScoreInfo 的动态理由不得再拼进 onclick 的 JS 字符串字面量
+  if (/showScoreInfo\('[^']*',\s*'\$\{/.test(src))
+    errors.push('[回归][加固] 仍存在 showScoreInfo(\'...\',\'${...}\') 动态拼接——应改 data-title/data-body + onclick="showScoreInfo(this)"');
+  if (!/onclick="showScoreInfo\(this\)"/.test(src))
+    errors.push('[回归][加固] 未发现 onclick="showScoreInfo(this)" 的元素模式调用');
+}
+
 (async () => {
   syntaxCheck();
   zodiacKeyCheck();
@@ -368,6 +386,7 @@ async function checkChengGuBaihuaRender(name) {
   checkShenShaLabel();
   await checkShenShaMeaning('神煞含义常驻');
   checkShenShaNoDup('神煞去重');
+  checkHardening();
   checkChengGuBaihua();
   await checkChengGuBaihuaRender('称骨白话');
   // 首屏-无出生信息：验证「首次访问即出今日黄历+今日吃什么+起卦、无需推算」（本次需求核心）
