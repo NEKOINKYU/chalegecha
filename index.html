@@ -101,9 +101,12 @@
   .form-block-label{font-size:12px;color:var(--sub);white-space:nowrap;flex-shrink:0;padding:0 6px 0 2px}
   .form-block select,.form-block input{border:none!important;background:transparent!important;box-shadow:none!important;padding:5px 4px!important;font-size:13px!important;min-width:0;flex:1}
   .form-block .btn{padding:4px 10px!important;font-size:12px!important;flex-shrink:0}
-  .date-quick{display:flex;gap:5px;flex-wrap:wrap;width:100%;margin-top:3px}
-  .date-quick .chip{padding:3px 10px;font-size:11px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:999px;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
-  .date-quick .chip:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+  .dt-pick{display:flex;gap:4px;flex-wrap:wrap;align-items:center;width:100%}
+  .dt-sel{border:1px solid var(--line)!important;background:var(--surface)!important;color:var(--ink)!important;box-shadow:none!important;padding:5px 6px!important;font-size:13px!important;min-width:0;flex:1 1 auto;border-radius:var(--radius-sm)}
+  .dt-sel:focus{outline:none;border-color:var(--accent)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)!important}
+  .dt-sel:disabled{opacity:.45;cursor:not-allowed}
+  .dt-unk{font-size:12px;color:var(--sub);white-space:nowrap;display:flex;align-items:center;gap:4px;cursor:pointer;padding:0 2px;flex-shrink:0}
+  .dt-unk input{width:auto;min-width:0}
   select,input[type=date],input[type=time],input[type=number]{padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2);font-size:13px;color:var(--ink);font-family:inherit;transition:border-color .2s ease,box-shadow .2s ease}
   input[type=number]{width:78px}
   select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
@@ -466,14 +469,13 @@
   </div>
   <div class="form-block">
     <span class="form-block-label">推算</span>
-    <input type="date" id="targetDate" title="可改任意日期">
-    <input type="time" id="targetTime" title="推算时刻">
-    <div class="date-quick">
-      <button type="button" class="chip" onclick="jumpTarget(-7)">-7天</button>
-      <button type="button" class="chip" onclick="jumpTarget(-1)">昨天</button>
-      <button type="button" class="chip" onclick="jumpTarget(0)">今天</button>
-      <button type="button" class="chip" onclick="jumpTarget(1)">明天</button>
-      <button type="button" class="chip" onclick="jumpTarget(7)">+7天</button>
+    <div class="dt-pick" id="dtPick">
+      <select id="selYear" class="dt-sel" aria-label="年"></select>
+      <select id="selMonth" class="dt-sel" aria-label="月"></select>
+      <select id="selDay" class="dt-sel" aria-label="日"></select>
+      <select id="selHour" class="dt-sel" aria-label="时"></select>
+      <select id="selMin" class="dt-sel" aria-label="分"></select>
+      <label class="dt-unk" title="不知道具体时刻时勾选，时辰宜忌将暂不显示"><input type="checkbox" id="chkUnknown"> 时间未知</label>
     </div>
     <button class="btn btn-go" id="goBtn" onclick="runCalc()">开始推算</button>
     <button class="btn btn-ghost" data-icon="dice" onclick="fillExample()">随机示例</button>
@@ -710,19 +712,38 @@ function deEmoji(s){
   for(const e in EMOJI_MAP){ if(s.indexOf(e) >= 0) s = s.split(e).join(icon(EMOJI_MAP[e])); }
   return s;
 }
-// 推算日期快捷切换：days=0 回到今天；其余基于当前所选日期 ±days
-function jumpTarget(days){
-  const el = document.getElementById('targetDate');
-  let base;
-  if(days === 0){ base = new Date(); }
-  else {
-    const cur = el.value;
-    base = cur ? new Date(+cur.slice(0,4), +cur.slice(5,7)-1, +cur.slice(8,10)) : new Date();
-    base.setDate(base.getDate() + days);
-  }
-  const pd = n => String(n).padStart(2,'0');
-  el.value = `${base.getFullYear()}-${pd(base.getMonth()+1)}-${pd(base.getDate())}`;
-  const main = document.getElementById('main');
+/* ---- 推算时刻选择器：年/月/日/时/分 直选，默认今天此刻，支持「时间未知」 ---- */
+function syncDayOptions(preserve){
+  const y=+document.getElementById('selYear').value, m=+document.getElementById('selMonth').value;
+  const max = (y && m) ? new Date(y, m, 0).getDate() : 31;
+  const sel=document.getElementById('selDay');
+  let cur = (preserve!=null) ? preserve : (+sel.value||1);
+  if(cur<1 || cur>max) cur = Math.min(Math.max(cur,1), max);
+  let html=''; for(let i=1;i<=max;i++) html+=`<option value="${i}">${i}日</option>`;
+  sel.innerHTML=html; sel.value=cur;
+}
+function fillDtNow(){
+  const now=new Date();
+  const y=now.getFullYear(), m=now.getMonth()+1, d=now.getDate(), h=now.getHours(), mi=now.getMinutes();
+  const ySel=document.getElementById('selYear'), mSel=document.getElementById('selMonth'),
+        hSel=document.getElementById('selHour'), miSel=document.getElementById('selMin');
+  let yh=''; for(let yy=2100; yy>=1900; yy--) yh+=`<option value="${yy}"${yy===y?' selected':''}>${yy}年</option>`;
+  ySel.innerHTML=yh;
+  let mh=''; for(let mm=1; mm<=12; mm++) mh+=`<option value="${mm}"${mm===m?' selected':''}>${mm}月</option>`;
+  mSel.innerHTML=mh;
+  let hh=''; for(let x=0;x<24;x++) hh+=`<option value="${x}"${x===h?' selected':''}>${x}时</option>`;
+  hSel.innerHTML=hh;
+  let mih=''; for(let x=0;x<60;x++) mih+=`<option value="${x}"${x===mi?' selected':''}>${x}分</option>`;
+  miSel.innerHTML=mih;
+  document.getElementById('chkUnknown').checked=false;
+  syncDayOptions(d);
+}
+function onDtChange(){
+  const unk=document.getElementById('chkUnknown').checked;
+  syncDayOptions();                                   // 年/月变动时钳制日范围
+  document.getElementById('selHour').disabled=unk;
+  document.getElementById('selMin').disabled=unk;
+  const main=document.getElementById('main');
   if(main && !main.classList.contains('hidden')){ try{ render(); }catch(e){ showPlaceholder(null); } }
   else { markDirty(); }
 }
@@ -740,8 +761,11 @@ function render(){
   const lng = lngV==='' ? null : parseFloat(lngV);
   const tzV = document.getElementById('birthTz').value;
   const tz = tzV==='' ? 8 : parseInt(tzV);
-  const target=document.getElementById('targetDate').value;
-  const targetTime=document.getElementById('targetTime').value||'12:00';
+  const tY=parseInt(document.getElementById('selYear').value)||0;
+  const tM=parseInt(document.getElementById('selMonth').value)||0;
+  const tD=parseInt(document.getElementById('selDay').value)||0;
+  const timeUnknown=document.getElementById('chkUnknown').checked;
+  const target=(tY&&tM&&tD)?`${tY}-${String(tM).padStart(2,'0')}-${String(tD).padStart(2,'0')}`:'';
   const hasBirth = y>1900;
   const anyBirth = y>1900 || m>0 || d>0 || h>=0 || lat!=null || lng!=null;
   const canBazi = y>1900 && m>0 && d>0;            // 年+月+日 足够排八字（时辰可选）
@@ -765,7 +789,8 @@ function render(){
 
   const solar = target ? Solar.fromYmd(parseInt(target.slice(0,4)),parseInt(target.slice(5,7)),parseInt(target.slice(8,10))) : Solar.fromDate(new Date());
   const L = solar.getLunar();
-  const th = parseInt(targetTime.split(':')[0])||12; // 推算时刻小时
+  const th = timeUnknown ? 12 : (parseInt(document.getElementById('selHour').value)||12); // 推算时刻小时（未知时按午时占位，仅时辰卡跳过）
+  const tmin = timeUnknown ? 0 : (parseInt(document.getElementById('selMin').value)||0);   // 推算时刻分钟
 
   const todayStr = solar.toYmd()+' '+solar.getWeekInChinese();
   const lunarStr = L.toString();
@@ -785,28 +810,36 @@ function render(){
   const xiPos = L.getDayPositionXiDesc();
 
   /* ---- 时辰宜忌（让推算时刻的小时真正参与，不再只是死变量） ---- */
-  const GAN_NAMES = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
-  const ZHI_NAMES = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-  const HOUR_RANGE = ['23-1','1-3','3-5','5-7','7-9','9-11','11-13','13-15','15-17','17-19','19-21','21-23'];
-  const zhiIdx = (Math.floor((th+1)/2)) % 12;            // 23-0→子,1-2→丑…15-16→申(即17点前)
-  const hourZhi = ZHI_NAMES[zhiIdx];
-  const hourWx = ZHI[hourZhi];                            // 时支五行（复用 ZHI_CANG）
-  const dayGanName = L.getDayGan();                       // 推算日干名
-  const dayWx = GAN[dayGanName];                          // 日干五行
-  const hourGanIdx = (([0,2,4,6,8][GAN_NAMES.indexOf(dayGanName)%5]) + zhiIdx) % 10; // 五鼠遁
-  const hourGanZhi = GAN_NAMES[hourGanIdx] + hourZhi;
-  let hourLuck='平', hourLuckCls='mid', hourLuckTip='时辰与日主比和，平稳无冲，宜按部就班。';
-  if(hourWx!==dayWx){
-    if(SHENG[hourWx]===dayWx){ hourLuck='吉'; hourLuckCls='good'; hourLuckTip='时辰生扶日主，得时助力，宜推进要事。'; }
-    else if(SHENG[dayWx]===hourWx){ hourLuck='小耗'; hourLuckCls='mid'; hourLuckTip='日主生时辰，稍泄气，宜守成、忌强出头。'; }
-    else if(KE[hourWx]===dayWx){ hourLuck='凶'; hourLuckCls='bad'; hourLuckTip='时辰克日主，阻力明显，宜稳守、忌冒进。'; }
-    else if(KE[dayWx]===hourWx){ hourLuck='耗'; hourLuckCls='mid'; hourLuckTip='日主克时辰，费力稍多，宜务实、忌空耗。'; }
-  }
-  const hourYiJi = (D.HOUR_YI_JI && D.HOUR_YI_JI[hourZhi]) || {yi:[],ji:[],tip:''};
-  const hourCls = hourLuckCls==='good'?'sb-strong':hourLuckCls==='bad'?'sb-weak':'';
-  const hourHtml = `
+  let hourHtml;
+  if(timeUnknown){
+    hourHtml = `<div class="card hour-card">
+    <h2>⏰ 推算时刻 · 时间未知</h2>
+    <div class="mini-detail">未指定具体时刻，时辰宜忌暂不显示（按日推算的其它内容不受影响）。</div>
+  </div>`;
+  } else {
+    const p2 = n => String(n).padStart(2,'0');
+    const GAN_NAMES = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+    const ZHI_NAMES = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+    const HOUR_RANGE = ['23-1','1-3','3-5','5-7','7-9','9-11','11-13','13-15','15-17','17-19','19-21','21-23'];
+    const zhiIdx = (Math.floor((th+1)/2)) % 12;            // 23-0→子,1-2→丑…15-16→申(即17点前)
+    const hourZhi = ZHI_NAMES[zhiIdx];
+    const hourWx = ZHI[hourZhi];                            // 时支五行（复用 ZHI_CANG）
+    const dayGanName = L.getDayGan();                       // 推算日干名
+    const dayWx = GAN[dayGanName];                          // 日干五行
+    const hourGanIdx = (([0,2,4,6,8][GAN_NAMES.indexOf(dayGanName)%5]) + zhiIdx) % 10; // 五鼠遁
+    const hourGanZhi = GAN_NAMES[hourGanIdx] + hourZhi;
+    let hourLuck='平', hourLuckCls='mid', hourLuckTip='时辰与日主比和，平稳无冲，宜按部就班。';
+    if(hourWx!==dayWx){
+      if(SHENG[hourWx]===dayWx){ hourLuck='吉'; hourLuckCls='good'; hourLuckTip='时辰生扶日主，得时助力，宜推进要事。'; }
+      else if(SHENG[dayWx]===hourWx){ hourLuck='小耗'; hourLuckCls='mid'; hourLuckTip='日主生时辰，稍泄气，宜守成、忌强出头。'; }
+      else if(KE[hourWx]===dayWx){ hourLuck='凶'; hourLuckCls='bad'; hourLuckTip='时辰克日主，阻力明显，宜稳守、忌冒进。'; }
+      else if(KE[dayWx]===hourWx){ hourLuck='耗'; hourLuckCls='mid'; hourLuckTip='日主克时辰，费力稍多，宜务实、忌空耗。'; }
+    }
+    const hourYiJi = (D.HOUR_YI_JI && D.HOUR_YI_JI[hourZhi]) || {yi:[],ji:[],tip:''};
+    const hourCls = hourLuckCls==='good'?'sb-strong':hourLuckCls==='bad'?'sb-weak':'';
+    hourHtml = `
   <div class="card hour-card">
-    <h2>⏰ 推算时刻 · ${hourZhi}时（${HOUR_RANGE[zhiIdx]}点）</h2>
+    <h2>⏰ 推算时刻 · ${hourZhi}时（${HOUR_RANGE[zhiIdx]}点 · ${p2(th)}:${p2(tmin)}）</h2>
     <div class="mini-detail" style="margin-bottom:6px">时辰干支 <b>${hourGanZhi}</b>　日主 <b>${dayGanName}</b>（${dayWx}）与时辰（${hourWx}）相<span class="strong-badge ${hourCls}" style="cursor:pointer" onclick="showWordTip(event,'时辰吉凶')">${hourLuck}</span></div>
     <div class="th-row" style="flex-direction:column;align-items:flex-start;gap:6px">
       <div class="th-yi"><span class="th-yj-lab y">宜</span>${fmtWords(hourYiJi.yi,6)}</div>
@@ -815,6 +848,7 @@ function render(){
     <div class="mini-detail" style="margin-top:6px">${escHtml(hourYiJi.tip||'')}　${hourLuckTip}</div>
     ${xiPos?`<div class="mini-detail" style="margin-top:4px">喜神方位：<b>${escHtml(xiPos)}</b></div>`:''}
   </div>`;
+  }
   const liuYao = L.getLiuYao();
 
   /* ---- 八字个性化 ---- */
@@ -1672,8 +1706,7 @@ function saveBirth(){
   }
   const now=new Date();
   const pad=n=>String(n).padStart(2,'0');
-  document.getElementById('targetDate').value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
-  document.getElementById('targetTime').value=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  fillDtNow();   // 推算时刻选择器默认今天此刻
   // 首屏三卡：今日黄历 + 今日吃什么 + 起卦（不填出生信息也能看，进入 main 前先渲染）
   try{ renderHomePeek(); }catch(e){}
   const v2=document.getElementById('ver2'); if(v2) v2.textContent = (D.VERSION||'').split(' · ')[0];
@@ -1703,14 +1736,10 @@ function saveBirth(){
   ['birthYear','birthMonth','birthDay','birthHour','birthGender','birthCountry',
    'birthProv','birthCity','birthArea','birthWorldCity']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('change', markDirty); });
-  // 推算日期/时刻变动 → 正文内即时刷新（不用再点「开始推算」）
-  ['targetDate','targetTime'].forEach(id=>{
+  // 推算时刻选择器变动 → 正文内即时刷新（不用再点「开始推算」）
+  ['selYear','selMonth','selDay','selHour','selMin','chkUnknown'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el) el.addEventListener('change', ()=>{
-      const main=document.getElementById('main');
-      if(main && !main.classList.contains('hidden')){ try{ render(); }catch(e){ showPlaceholder(null); } }
-      else { markDirty(); }
-    });
+    if(el) el.addEventListener('change', onDtChange);
   });
   // 回车 = 开始推算（仅正文页内）
   document.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const m=document.getElementById('main'); if(m && !m.classList.contains('hidden')) runCalc(); } });
@@ -1751,11 +1780,8 @@ function enterApp(){
   }
   window.scrollTo({top:0,behavior:'auto'});
   setTimeout(()=>{ if(intro) intro.style.display='none'; }, 520);
-  // 进正文：仅当推算日期/时刻为空时才补今天，保留用户改过的值（不再强制重置为今天）
-  const now=new Date();
-  const pd=n=>String(n).padStart(2,'0');
-  if(!document.getElementById('targetDate').value) document.getElementById('targetDate').value = `${now.getFullYear()}-${pd(now.getMonth()+1)}-${pd(now.getDate())}`;
-  if(!document.getElementById('targetTime').value) document.getElementById('targetTime').value = `${pd(now.getHours())}:${pd(now.getMinutes())}`;
+  // 进正文：推算时刻选择器已在页面加载时默认今天此刻，这里仅在尚未初始化时兜底填充
+  if(!document.getElementById('selYear').options.length) fillDtNow();
   let saved=null;
   try{ saved=JSON.parse(localStorage.getItem('zlhy_birth_v3')||'null'); }catch(e){}
   // 出生表单默认收起（首页以内容为主，想推算再展开）；有存档则展开
