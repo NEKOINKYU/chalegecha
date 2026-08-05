@@ -97,14 +97,17 @@ function collect() {
   for (const f of files) {
     const ext = path.extname(f).toLowerCase();
     const key = path.relative(ROOT, f).split(path.sep).join('/');
+    const buf = fs.readFileSync(f);
     await cos.putObject({
       Bucket: BUCKET,
       Region: REGION,
       Key: key,
-      Body: fs.createReadStream(f),
+      Body: buf,
+      ContentLength: buf.length,
       ContentType: MIME[ext] || 'application/octet-stream',
-      // 关键：覆盖 SDK 用 stream 上传时可能自动加的 Content-Disposition: attachment，
-      // 否则浏览器会把 index.html 当文件下载而非渲染网页
+      // 关键：显式设 inline，避免浏览器把 index.html 当文件下载而非渲染网页。
+      // 必须用 Buffer（而非 fs.createReadStream）上传——SDK 在 stream 模式下会静默丢弃
+      // ContentDisposition 等自定义响应头元数据，导致线上仍返回 attachment。
       ContentDisposition: 'inline',
     });
     console.log('  ↑', key);
