@@ -263,7 +263,10 @@ function checkShenShaLabel() {
   for (const k of ['天乙贵人','文昌贵人','禄神','将星','桃花','羊刃']) {
     if (!new RegExp(`'${k}':'(吉|中|凶)'`).test(data)) errors.push(`[回归] SHENSHA_KIND 未给「${k}」标注吉/中/凶`);
   }
-  if (!/SHENSHA_KIND\[s\]/.test(html)) errors.push('[回归] 命盘神煞渲染未读取 SHENSHA_KIND 分类(内容标注丢失)');
+  if (!/SHENSHA_KIND\[o\.base\]/.test(html)) errors.push('[回归] 命盘神煞渲染未读取 SHENSHA_KIND 分类(内容标注丢失)');
+  // 两派都算：桃花/将星 必须同时计算 年支派 与 日支派
+  if (!html.includes("'桃花·年支'") || !html.includes("'桃花·日支'")) errors.push('[回归] 桃花未同时计算 年支派/日支派 两派');
+  if (!html.includes("'将星·年支'") || !html.includes("'将星·日支'")) errors.push('[回归] 将星未同时计算 年支派/日支派 两派');
   if (!/onclick="showWordTip\(event,'神煞'\)"/.test(html)) errors.push('[回归] 神煞标题未改为可点解释的统一标注样式');
 }
 

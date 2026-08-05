@@ -590,14 +590,22 @@ function getShenSha(pillars){
   const out = [];
   if(pillars.length<4 || pillars.some(p=>!p)) return out;
   const dayGan = pillars[2].charAt(0);
-  const zhis = pillars.map(p=>p.charAt(1));
+  const zhis = pillars.map(p=>p.charAt(1));          // [年支,月支,日支,时支]
   const yearZhi = zhis[0];
-  if((D.TIAN_YI[dayGan]||[]).some(z=>zhis.includes(z))) out.push('天乙贵人');
-  if(zhis.slice(2).includes(D.WEN_CHANG[dayGan])) out.push('文昌贵人');
-  if(zhis.slice(2).includes(D.YANG_REN[dayGan])) out.push('羊刃');
-  if(zhis.slice(2).includes(D.LU_SHEN[dayGan])) out.push('禄神');
-  if(zhis.includes(D.JIANG_XING[yearZhi])) out.push('将星');
-  if(zhis.includes(D.TAO_HUA[yearZhi])) out.push('桃花');
+  const dayZhi  = zhis[2];
+  const PN = ['年','月','日','时'];
+  const add = (base, label, idx) => { if(idx>=0) out.push({base, label}); };
+  // —— 日主系（以日干为基准），标签带神煞所在物理柱位 ——
+  let i;
+  if((i = zhis.findIndex(z => (D.TIAN_YI[dayGan]||[]).includes(z))) >= 0) add('天乙贵人', '天乙贵人·'+PN[i], i);
+  if((i = [2,3].find(k => zhis[k] === D.WEN_CHANG[dayGan])) !== undefined) add('文昌贵人', '文昌贵人·'+PN[i], i);
+  if((i = [2,3].find(k => zhis[k] === D.YANG_REN[dayGan]))  !== undefined) add('羊刃',     '羊刃·'+PN[i],     i);
+  if((i = [2,3].find(k => zhis[k] === D.LU_SHEN[dayGan]))   !== undefined) add('禄神',     '禄神·'+PN[i],     i);
+  // —— 年支派 / 日支派 两派都算（桃花、将星）——
+  if((i = zhis.findIndex(z => z === D.JIANG_XING[yearZhi])) >= 0) add('将星', '将星·年支', i);
+  if((i = zhis.findIndex(z => z === D.JIANG_XING[dayZhi]))  >= 0) add('将星', '将星·日支', i);
+  if((i = zhis.findIndex(z => z === D.TAO_HUA[yearZhi]))    >= 0) add('桃花', '桃花·年支', i);
+  if((i = zhis.findIndex(z => z === D.TAO_HUA[dayZhi]))     >= 0) add('桃花', '桃花·日支', i);
   return out;
 }
 // 命盘顶部「一眼读懂你」：基于日主五行 + 身强/身弱，生成几句话的情绪价值总结
@@ -1117,8 +1125,8 @@ function render(){
         <div><b><span class="yw" onclick="showWordTip(event,'喜用神')">喜用神</span>：</b>${ys.xi.map(wx).join('、')}　<b><span class="yw" onclick="showWordTip(event,'忌神')">忌神</span>：</b>${ys.ji.map(wx).join('、')}</div>
         <div><b><span class="yw" onclick="showWordTip(event,'五行分布')">五行分布</span>：</b>${Object.entries(bazi.wuxing).map(([k,v])=>`${wx(k)}${v}`).join(' · ')}　<b>缺：</b>${missingWuxing(bazi.wuxing).map(wx).join('、')||'无'}</div>
         ${chengGu?`<div><b><span class="yw" onclick="showWordTip(event,'袁天罡称骨')">袁天罡称骨</span>：</b><span class="cg-weight" onclick="var p=document.getElementById('cgPoem'); if(p){p.hidden=!p.hidden; this.classList.toggle('open');}" role="button" tabindex="0">⚖️ ${chengGu.cn}<span class="cg-caret">▾</span></span><span class="cg-baihua">：${escHtml(D.CHENG_GU.baihua[chengGu.cn]||'')}</span>${chengGu.poem?`<div class="cg-poem" id="cgPoem" hidden>${escHtml(chengGu.poem)}</div>`:''}</div>`:(canBazi?`<div><b><span class="yw" onclick="showWordTip(event,'袁天罡称骨')">袁天罡称骨</span>：</b><span class="mini-detail">需出生时辰才能称骨</span></div>`:'')}
-        ${shensha.length?`<div><b><span class="yw" onclick="showWordTip(event,'神煞')">神煞</span>：</b>${shensha.map(s=>{const k=D.SHENSHA_KIND[s]||'中';const cls=k==='吉'?'good':k==='凶'?'bad':'mid';return `<span class="shensha sk-${cls}"><b class="sk-tag">${k}</b>${s}</span>`;}).join('')} <span class="mini-detail">（已标注吉/中/凶，含义见下方）</span></div>
-        <div class="sk-mean-list">${shensha.map(s=>`<div class="sk-mean"><b>${s}</b>：${escHtml(D.ASTRO_DICT[s]||'传统神煞，暂无可查释义')}</div>`).join('')}</div>`:''}
+        ${shensha.length?`<div><b><span class="yw" onclick="showWordTip(event,'神煞')">神煞</span>：</b>${shensha.map(o=>{const k=D.SHENSHA_KIND[o.base]||'中';const cls=k==='吉'?'good':k==='凶'?'bad':'mid';return `<span class="shensha sk-${cls}"><b class="sk-tag">${k}</b>${escHtml(o.label)}</span>`;}).join('')} <span class="mini-detail">（后缀·年/月/日/时 指所在/基准地支，同一神煞落不同柱含义不同）</span></div>
+        <div class="sk-mean-list">${shensha.map(o=>`<div class="sk-mean"><b>${escHtml(o.label)}</b>：${escHtml(D.ASTRO_DICT[o.base]||'传统神煞，暂无可查释义')}</div>`).join('')}</div>`:''}
         ${daYun?`<div><b><span class="yw" onclick="showWordTip(event,'大运')">当前大运</span>：</b>${colorGZ(daYun.gz)}（${daYun.startAge}岁 · ${daYun.startYear}年起）· ${daYun.rel}</div>`:''}
         ${bazi.taiYuan?`<div class="mini-detail"><span class="yw" onclick="showWordTip(event,'胎元')">胎元</span> ${bazi.taiYuan} · <span class="yw" onclick="showWordTip(event,'命宫')">命宫</span> ${bazi.mingGong} · <span class="yw" onclick="showWordTip(event,'身宫')">身宫</span> ${bazi.shenGong}</div>`:''}
       </div>
