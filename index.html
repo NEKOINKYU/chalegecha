@@ -158,6 +158,12 @@
   .cg-poem{margin:6px 0 0;padding:8px 12px;font-size:13px;line-height:1.7;color:var(--text);background:var(--surface-2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
   .form-hint{font-size:12px;color:var(--ink-2);background:var(--surface-2);border:1px dashed var(--line);border-radius:14px;padding:10px 12px;margin-bottom:12px;line-height:1.9}
   .quote-text{font-size:14px;line-height:1.9;color:var(--accent);font-style:italic;text-align:center;padding:6px 12px;background:var(--accent-soft);border:1px solid var(--line);border-radius:12px;margin-top:8px}
+  .persona-card{background:linear-gradient(135deg,var(--accent-soft),var(--card));border:1px solid var(--line-2);border-left:4px solid var(--accent)}
+  .persona-kicker{font-size:12px;letter-spacing:2px;color:var(--accent);font-weight:700;margin-bottom:8px}
+  .persona-text{font-size:15px;line-height:1.95;color:var(--ink);font-weight:500}
+  .persona-text b{color:var(--accent)}
+  .persona-foot{margin-top:10px;font-size:12.5px;color:var(--sub);line-height:1.7}
+  .persona-card--empty .persona-text{font-size:14px;color:var(--ink-2);font-weight:400}
   .gua-display{display:flex;gap:14px;align-items:center;margin-top:6px;flex-wrap:wrap;justify-content:center}
   .gua-box{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:12px 16px;text-align:center;min-width:120px}
   .gua-box .g-name{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:2px}
@@ -593,6 +599,27 @@ function getShenSha(pillars){
   if(zhis.includes(D.JIANG_XING[yearZhi])) out.push('将星');
   if(zhis.includes(D.TAO_HUA[yearZhi])) out.push('桃花');
   return out;
+}
+// 命盘顶部「一眼读懂你」：基于日主五行 + 身强/身弱，生成几句话的情绪价值总结
+function buildPersonaSummary(bazi, ys){
+  if(!bazi || !bazi.me) return '';
+  const me = bazi.me;            // 日主五行：木火土金水
+  const strong = !!(ys && ys.strong);
+  const CORE = {
+    木: '你是一个像树一样的人——根扎得稳，向上生长是你的本能。你有自己的节奏，不轻易被旁人带偏，认定的方向就慢慢长上去。',
+    火: '你是一个像光一样的人——热情、明亮、主动。你一站出来就有温度，能把气氛和点子都点亮，是那种让人想靠近的人。',
+    土: '你是一个像大地一样的人——稳、厚、靠得住。你不急不躁，能接住事也能接住人，是朋友心里“有你在就踏实”的那一个。',
+    金: '你是一个像精金一样的人——清、利、有棱角。你讲原则、利落、不拖泥带水，认定的对错分得很清，也敢做决定。',
+    水: '你是一个像水一样的人——灵、活、懂变通。你脑子转得快，适应力强，深浅都藏得住，遇着沟坎也能绕过去。'
+  };
+  const sLine = strong
+    ? '你骨子里有主见、有冲劲，认定的事能自己扛、自己推，是那种“交给我就行”的人。'
+    : '你心思细、感知力强，更懂得借势与相处，柔里带韧——不硬碰硬，却也从不真的认输。';
+  const xiName = (ys && ys.xi && ys.xi.length) ? ys.xi.map(wx).join('、') : '自己';
+  const cLine = strong
+    ? `你最舒服的样子，是给自己留一点余地、别逼太满——${xiName}是你的补给，松一松反而更顺。`
+    : `你最舒服的样子，是被懂你的人托着、安心做自己——${xiName}是你的补给，往那上面靠一靠就稳了。`;
+  return `${CORE[me]||''}${sLine}${cLine}`;
 }
 function evalAgainstYongShen(wx, ys){
   if(!wx || !ys || !ys.xi.length) return {delta:0, rel:''};
@@ -1069,6 +1096,18 @@ function render(){
   </div>
   ${anyBirth?`
   <div class="tab-panel" data-tab="ming">
+  ${canBazi && bazi ? `
+  <div class="card persona-card">
+    <div class="persona-kicker">✨ 一眼读懂你</div>
+    <div class="persona-text">${buildPersonaSummary(bazi, ys)}</div>
+    <div class="persona-foot">日主 <b>${bazi.dayGan}${bazi.dayZhi}</b>（${bazi.me}）· ${ys.strong?'身强':'身弱'}，下面展开看完整的你 →</div>
+  </div>
+  ` : `
+  <div class="card persona-card persona-card--empty">
+    <div class="persona-kicker">✨ 一眼读懂你</div>
+    <div class="persona-text">补全出生年份和时辰，我就能告诉你「你是一个什么样的人」。</div>
+  </div>
+  `}
   <div class="card">
     <h2>🔮 我的八字 ${canBazi?'('+y+'-'+m+'-'+d+(h>=0?' '+['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'][h/2]+'时':' 时辰未知')+')':''}</h2>
     ${canBazi && bazi ? `
