@@ -281,6 +281,26 @@ function checkShenShaLabel() {
   if (!/onclick="showWordTip\(event,'神煞'\)"/.test(html)) errors.push('[回归] 神煞标题未改为可点解释的统一标注样式');
 }
 
+// 三合局两派(年支+日支)若年支与日支同属一个三合局，会算出同一个目标地支、落在同一柱，
+// 生成两个完全相同的标签——折叠区出现「一模一样的两个」。本断言用 crafted 八字直接调 getShenSha 拦此回归。
+// 年=申、月=寅、日=子、时=辰：申/子皆属申子辰 → 华盖=辰、驿马=寅，柱中含辰/寅 → 修复前应各出现 2 次。
+function checkShenShaNoDup(name) {
+  const window = loadDom();
+  const pills = ['戊申', '甲寅', '甲子', '丙辰'];
+  let out;
+  try { out = window.getShenSha(pills); }
+  catch (e) { errors.push(`[回归] ${name}: getShenSha 抛异常: ${e.message}`); return; }
+  if (!Array.isArray(out)) { errors.push(`[回归] ${name}: getShenSha 未返回数组`); return; }
+  const seen = new Set();
+  const dups = [];
+  for (const o of out) {
+    const k = (o.base || '') + '|' + (o.label || '');
+    if (seen.has(k)) dups.push(o.label);
+    seen.add(k);
+  }
+  if (dups.length) errors.push(`[回归] ${name}: 神煞出现重复标签 ${[...new Set(dups)].join('、')}（年支/日支同三合局应去重，不得显示一模一样的两个）`);
+}
+
 // 神煞含义必须常驻可见(无需点击)：含义已在下方 .sk-mean-list 直接渲染；
 // 同时神煞胶囊/释义词不再可点(含义已常驻，点按为冗余虚假入口)，断言 .shensha 无 onclick、释义词 <b> 无 onclick。
 async function checkShenShaMeaning(name) {
@@ -347,6 +367,7 @@ async function checkChengGuBaihuaRender(name) {
   guaKeyCheck();
   checkShenShaLabel();
   await checkShenShaMeaning('神煞含义常驻');
+  checkShenShaNoDup('神煞去重');
   checkChengGuBaihua();
   await checkChengGuBaihuaRender('称骨白话');
   // 首屏-无出生信息：验证「首次访问即出今日黄历+今日吃什么+起卦、无需推算」（本次需求核心）

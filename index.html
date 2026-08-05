@@ -644,7 +644,11 @@ function getShenSha(pillars){
   const inXun = new Set(); for(let k=0;k<10;k++) inXun.add((headZ-1+k)%12+1);
   const kong = ZS.filter((_,idx)=>!inXun.has(idx+1));
   zhis.forEach((z,idx)=>{ if(kong.includes(z)) add('空亡', idx); });
-  return out;
+  // 三合局两派（年支+日支）若年支与日支同属一个三合局（如申/子皆申子辰），
+  // 会算出同一个目标地支、落在同一柱 → 生成两个完全相同的标签。本属同一桩事实，
+  // 去重避免折叠区出现「一模一样的两个」。落在不同柱（不同含义）的则各自保留。
+  const seen = new Set();
+  return out.filter(o => { const k = o.base + '|' + o.label; if (seen.has(k)) return false; seen.add(k); return true; });
 }
 // 命盘顶部「一眼读懂你」：基于日主五行 + 身强/身弱，生成几句话的情绪价值总结
 function buildPersonaSummary(bazi, ys){
