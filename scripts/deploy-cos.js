@@ -87,9 +87,23 @@ function collect() {
   });
   console.log('· 已开静态网站托管');
 
-  // 3. 设公共读
+  // 3. 设公共读（桶 ACL：匿名可列目录，但不足以读对象内容）
   await cos.putBucketAcl({ Bucket: BUCKET, Region: REGION, ACL: 'public-read' });
-  console.log('· 已设公共读');
+  console.log('· 已设桶 ACL 公共读');
+
+  // 3.5 桶策略：放行匿名 GetObject（权威修复——否则对象默认私有、真实浏览器 AccessDenied）
+  //     桶 ACL 的 public-read 只给匿名「列目录」权限；读对象内容必须靠这条策略或对象级 ACL。
+  const policy = {
+    version: '2.0',
+    statement: [{
+      effect: 'allow',
+      principal: { qcs: ['qcs::cam::anyone:anyone'] },
+      action: ['name/cos:GetObject'],
+      resource: [`qcs::cos:${REGION}:uid/${APPID}:${BUCKET}/*`],
+    }],
+  };
+  await cos.putBucketPolicy({ Bucket: BUCKET, Region: REGION, Policy: JSON.stringify(policy) });
+  console.log('· 已写桶策略（匿名 GetObject 放行）');
 
   // 4. 上传文件
   const files = collect();
@@ -105,10 +119,12 @@ function collect() {
       Body: buf,
       ContentLength: buf.length,
       ContentType: MIME[ext] || 'application/octet-stream',
-      // 关键：显式设 inline，避免浏览器把 index.html 当文件下载而非渲染网页。
-      // 必须用 Buffer（而非 fs.createReadStream）上传——SDK 在 stream 模式下会静默丢弃
-      // ContentDisposition 等自定义响应头元数据，导致线上仍返回 attachment。
+      // 关键1：显式设 inline，避免浏览器把 index.html 当文件下载而非渲染网页。
+      //        必须用 Buffer（而非 fs.createReadStream）上传——SDK 在 stream 模式下会静默丢弃
+      //        ContentDisposition 等自定义响应头元数据，导致线上仍返回 attachment。
       ContentDisposition: 'inline',
+      // 关键2：对象级 ACL 设 public-read（双保险，即使桶策略失效对象仍可读）。
+      ACL: 'public-read',
     });
     console.log('  ↑', key);
   }
