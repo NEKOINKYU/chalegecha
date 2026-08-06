@@ -1617,6 +1617,9 @@ function renderFunCards(){
   const foodTip = (D.FOOD_WX_TIP && D.FOOD_WX_TIP[foodWX]) ? `（今日五行喜【${foodWX}】——${D.FOOD_WX_TIP[foodWX]}）` : '';
   const musicPool = (D.MUSIC_BY_WX && D.MUSIC_BY_WX[foodWX] && D.MUSIC_BY_WX[foodWX].length) ? D.MUSIC_BY_WX[foodWX] : (D.MUSIC_BY_WX&&D.MUSIC_BY_WX.default||['随心听']);
   const todayMusic = musicPool[Math.floor(Math.random()*musicPool.length)];
+  const musicParts = todayMusic.split('，');
+  const musicStyle = musicParts[0]||'随心听';
+  const musicDesc = musicParts[1]||'';
   const musicTip = (D.MUSIC_WX_TIP && D.MUSIC_WX_TIP[foodWX]) ? `（${D.MUSIC_WX_TIP[foodWX]}）` : '';
   box.innerHTML = deEmoji(`
     <div class="cards-row" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
@@ -1627,8 +1630,11 @@ function renderFunCards(){
         <div style="text-align:center;margin-top:8px"><button class="btn btn-ghost" onclick="rerollFood('funFoodBox')" style="font-size:12px">🎲 换一个</button></div>
       </div>
       <div class="card" style="flex:1;min-width:200px">
-        <h2>🎵 今天听什么</h2>
-        <div class="plain-text" id="funMusicBox" style="font-size:16px;text-align:center;padding:10px;font-weight:600;color:var(--ink);line-height:1.8">${todayMusic}</div>
+        <h2>🎵 今天想听什么</h2>
+        <div id="funMusicBox" style="text-align:center;padding:10px">
+          <div style="font-size:18px;font-weight:700;color:var(--ink);line-height:1.4;margin-bottom:4px">${escHtml(musicStyle)}</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.6">${escHtml(musicDesc)}</div>
+        </div>
         <div class="mini-detail" style="text-align:center;margin-top:2px">${musicTip}</div>
         <div style="text-align:center;margin-top:8px"><button class="btn btn-ghost" onclick="rerollMusic('funMusicBox')" style="font-size:12px">🎲 换一个</button></div>
       </div>
@@ -1651,7 +1657,9 @@ function rerollMusic(boxId){
   if(!box) return;
   const wx = curFoodWX || '火';
   const pool = (D.MUSIC_BY_WX && D.MUSIC_BY_WX[wx] && D.MUSIC_BY_WX[wx].length) ? D.MUSIC_BY_WX[wx] : (D.MUSIC_BY_WX&&D.MUSIC_BY_WX.default||['随心听']);
-  box.textContent = pool[Math.floor(Math.random()*pool.length)];
+  const s = pool[Math.floor(Math.random()*pool.length)];
+  const parts = s.split('，');
+  box.innerHTML = `<div style="font-size:18px;font-weight:700;color:var(--ink);line-height:1.4;margin-bottom:4px">${escHtml(parts[0]||'随心听')}</div><div style="font-size:13px;color:var(--sub);line-height:1.6">${escHtml(parts[1]||'')}</div>`;
 }
 
 /* ============ 推算触发：填信息 → 点按钮才算 ============ */
