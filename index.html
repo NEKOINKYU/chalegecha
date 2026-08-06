@@ -1200,7 +1200,7 @@ function render(){
         ${chengGu?`<div><b><span class="yw" onclick="showWordTip(event,'袁天罡称骨')">袁天罡称骨</span>：</b><span class="cg-weight" onclick="var p=document.getElementById('cgPoem'); if(p){p.hidden=!p.hidden; this.classList.toggle('open');}" role="button" tabindex="0">⚖️ ${chengGu.cn}<span class="cg-caret">▾</span></span><span class="cg-baihua">：${escHtml(D.CHENG_GU.baihua[chengGu.cn]||'')}</span>${chengGu.poem?`<div class="cg-poem" id="cgPoem" hidden>${escHtml(chengGu.poem)}</div>`:''}</div>`:(canBazi?`<div><b><span class="yw" onclick="showWordTip(event,'袁天罡称骨')">袁天罡称骨</span>：</b><span class="mini-detail">需出生时辰才能称骨</span></div>`:'')}
         ${shensha.length?`
         <div><b><span class="yw" onclick="showWordTip(event,'神煞')">神煞</span>：</b>${shenshaMain.map(o=>{const k=D.SHENSHA_KIND[o.base]||'中';const cls=k==='吉'?'good':k==='凶'?'bad':'mid';return `<span class="shensha sk-${cls}"><b class="sk-tag">${k}</b>${escHtml(o.label)}</span>`;}).join('')} <span class="mini-detail">（后缀·年/月/日/时 指所在/基准地支，同一神煞落不同柱含义不同）</span></div>
-        <div class="sk-mean-list">${shenshaMain.map(o=>`<div class="sk-mean"><b>${escHtml(o.label)}</b>：${escHtml(D.ASTRO_DICT[o.base]||'传统神煞，暂无可查释义')}</div>`).join('')}</div>
+        <div class="sk-mean-list">${shenshaMain.map(o=>`<div class="sk-mean"><b>${escHtml(o.label)}</b>：${escHtml(D.ASTRO_DICT[o.base]||'命理中的小彩蛋——有的旺你一把，有的提醒你悠着点')}</div>`).join('')}</div>
         ${shenshaRest.length?`
         <details class="shensha-all">
           <summary>查看全部神煞（${shenshaRest.length}）</summary>
@@ -1335,7 +1335,7 @@ function showWordTip(e, arg){
   if(!d && D.CHENG_GU && D.CHENG_GU.poems[w]) d = '袁天罡称骨批语：' + D.CHENG_GU.poems[w];
   var div = document.createElement('div');
   div.className = 'yw-detail';
-  div.innerHTML = '<b>' + escHtml(w) + '</b> ' + (d || '黄历/占星传统用词，暂无可查释义，可按字面理解');
+  div.innerHTML = '<b>' + escHtml(w) + '</b> ' + (d || '这个词有点冷门，按字面理解差不多就行～');
   div.onclick = function(ev){ ev.stopPropagation(); closeWordDetail(el); };
   // 标签内的词（值神/纳音/冲/喜神/六曜等）展开到整行，不挤在同一条 flex 里
   var parent = el.parentElement;
@@ -1564,7 +1564,7 @@ function rollGua(targetId){
       ${sim.aq?`<div class="gs-row"><span class="gs-k">爱情</span><span class="gs-v">${sim.aq}</span></div>`:''}
       ${sim.sy?`<div class="gs-row"><span class="gs-k">事业</span><span class="gs-v">${sim.sy}</span></div>`:''}
       ${sim.xw?`<div class="gs-row"><span class="gs-k">寻物</span><span class="gs-v">${sim.xw}</span></div>`:''}
-    </div>`:`<div class="mini-detail" style="margin-top:8px">（该卦暂无白话解析）</div>`}
+    </div>`:`<div class="mini-detail" style="margin-top:8px">（这卦太冷门了，还没写解释，全靠自己悟 🙏）</div>`}
     <div class="mini-detail" style="margin-top:8px">⚡ 本次为<b>随机起卦</b>（每点一次都不一样，纯娱乐参考）。</div>`);
   const btn = document.getElementById((targetId==='introGuaBox')?'introRollBtn':'funRollBtn');
   if(btn) btn.textContent = '🎲 再起一卦';
