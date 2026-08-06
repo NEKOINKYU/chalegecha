@@ -1263,7 +1263,8 @@ function render(){
 /* ================= 宜忌词/术语点击释义 ================= */
 function fmtWords(arr, max, dict){
   const d = dict || D.YIJI_DICT;
-  const a = (arr||[]).slice(0, max||4);
+  const blocked = D.YIJI_OBSOLETE || new Set();
+  const a = (arr||[]).filter(w=>!blocked.has(w)).slice(0, max||4);
   return a.length ? a.map(w=>`<span class="yw" data-w="${escHtml(w)}" onclick="showWordTip(event,this)">${escHtml(w)}</span>`).join('、') : '无';
 }
 function escHtml(s){
