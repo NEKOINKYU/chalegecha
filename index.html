@@ -115,7 +115,7 @@
   .btn:active{transform:scale(.96)}
   .btn-ghost{background:var(--card);color:var(--accent);border:1px solid var(--accent)}
   .btn-clear{background:var(--card);color:var(--sub);border:1px solid var(--line)}
-  .btn-go{padding:10px 26px;font-size:14px;font-weight:700;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 30%,transparent)}
+  .btn-go{padding:12px 28px;font-size:15px;font-weight:700;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 30%,transparent)}
   .btn-go:disabled{opacity:.6;cursor:default;box-shadow:none}
   .btn-go.rerun{background:var(--card);color:var(--accent);border:1.5px solid var(--accent);box-shadow:none}
   .dirty-tip{margin-top:8px;font-size:12.5px;color:#9a6b12;background:var(--accent-soft);border:1px dashed var(--accent);border-radius:12px;padding:8px 12px;line-height:1.7}
@@ -497,8 +497,8 @@
       <label class="dt-unk" title="不知道具体时刻时勾选，时辰宜忌将暂不显示"><input type="checkbox" id="chkUnknown"> 时间未知</label>
     </div>
     <button class="btn btn-go" id="goBtn" onclick="runCalc()">开始推算</button>
-    <button class="btn btn-ghost" data-icon="dice" onclick="fillExample()">随机示例</button>
-    <button class="btn btn-clear" onclick="clearBirth()">清空</button>
+    <button class="btn btn-ghost" data-icon="dice" onclick="fillExample()" style="font-size:14px;padding:10px 16px">随机示例</button>
+    <button class="btn btn-clear" onclick="clearBirth()" style="font-size:14px;padding:10px 16px">清空</button>
   </div>
   <div id="exampleNote" class="mini-detail" style="display:none"></div>
   <div id="dirtyTip" class="dirty-tip" style="display:none"></div>
@@ -1544,8 +1544,15 @@ function rollGua(targetId){
       ${sim.xw?`<div class="gs-row"><span class="gs-k">寻物</span><span class="gs-v">${sim.xw}</span></div>`:''}
     </div>`:`<div class="mini-detail" style="margin-top:8px">（该卦暂无白话解析）</div>`}
     <div class="mini-detail" style="margin-top:8px">⚡ 本次为<b>随机起卦</b>（每点一次都不一样，纯娱乐参考）。</div>`);
-  const btn = document.getElementById((targetId==='introGuaBox')?'introRollBtn':'rollBtn');
+  const btn = document.getElementById((targetId==='introGuaBox')?'introRollBtn':'funRollBtn');
   if(btn) btn.textContent = '🎲 再起一卦';
+}
+/* 清空起卦结果 */
+function clearGua(boxId, btnId){
+  const box=document.getElementById(boxId);
+  const btn=document.getElementById(btnId);
+  if(box){ box.innerHTML='<div class="gua-empty" style="text-align:center;font-size:13px;color:var(--sub)">点上方按钮，起一卦看看今日玄机 ☯</div>'; }
+  if(btn) btn.textContent='🎲 起一卦';
 }
 
 /* ============ 首屏预览：今日黄历 + 今日吃什么 + 起卦（不填出生信息也能看） ============ */
@@ -1644,6 +1651,7 @@ function renderFunCards(){
       <p class="mini-detail">随机起卦，看<b>意境</b>与<b>属性</b>，给爱情/事业/寻物一句小提示（纯娱乐，别较真）。</p>
       <div style="text-align:center;margin:6px 0">
         <button class="btn" id="funRollBtn" onclick="rollGua('funGuaBox')" style="font-size:13px">🎲 起一卦</button>
+        <button class="btn btn-clear" onclick="clearGua('funGuaBox','funRollBtn')" style="font-size:13px;padding:7px 14px;margin-left:6px">清空</button>
       </div>
       <div id="funGuaBox" class="gua-empty" style="text-align:center;font-size:13px;color:var(--sub)">点上方按钮，起一卦看看今日玄机 ☯</div>
     </div>
