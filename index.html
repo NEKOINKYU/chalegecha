@@ -1111,6 +1111,17 @@ function render(){
     astroHtml = `<div class="mini-detail">星盘引擎未加载（lib/celestine.js 缺失）。</div>`;
   }
 
+  /* ---- 星座日运（celestine.js 真实天象 + 模板引擎） ---- */
+  let horoscopeHtml = '';
+  if(canChart && typeof Celestine !== 'undefined'){
+    try{
+      const userName = sign; // 用户的太阳星座（来自出生日期）
+      horoscopeHtml = renderHoroscope(userName);
+    }catch(e){}
+  } else if(typeof Celestine === 'undefined'){
+    // 没加载celestine就降级
+  }
+
   /* ---- 鸡汤（本地随机 + 联网 hitokoto） ---- */
   const localQuote = D.QUOTES[Math.floor(Math.random()*D.QUOTES.length)];
 
@@ -1244,6 +1255,9 @@ function render(){
     <h2>🌟 星盘（celestine 引擎）${canChart?'· '+y+'-'+m+'-'+d:''}</h2>
     ${astroHtml || `<div class="mini-detail">还差出生信息，暂时排不出完整星盘。${birthInfoText}　完整星盘需：出生年 / 月 / 日 / 时 + 出生地经纬度。</div>`}
   </div>
+
+  <!-- 星座日运 -->
+  ${horoscopeHtml?`<div class="card" style="border-left:3px solid var(--accent)"><h2>🔮 ${userSign}座 · 今日运势</h2>${horoscopeHtml}</div>`:''}
   </div>
   `:''}
 
@@ -1949,6 +1963,93 @@ function saveBirth(){
   }
   setTimeout(() => { try{checkUpdate()}catch(e){}; setInterval(()=>{try{checkUpdate()}catch(e){}}, 600000); }, 5000);
 })();
+
+/* ========== 星座日运引擎（celestine.js 真实天象 + 模板拼接） ========== */
+const EN_SIGN_LIST = ['白羊','金牛','双子','巨蟹','狮子','处女','天秤','天蝎','射手','摩羯','水瓶','双鱼'];
+const EN_SIGN_MAP = {Aries:'白羊',Taurus:'金牛',Gemini:'双子',Cancer:'巨蟹',Leo:'狮子',Virgo:'处女',Libra:'天秤',Scorpio:'天蝎',Sagittarius:'射手',Capricorn:'摩羯',Aquarius:'水瓶',Pisces:'双鱼'};
+
+function getCurrentPlanets(){
+  if(typeof Celestine === 'undefined') return null;
+  const now = new Date();
+  try{
+    const chart = Celestine.calculateChart({
+      year:now.getFullYear(), month:now.getMonth()+1, day:now.getDate(),
+      hour:12, minute:0, second:0, timezone:8,
+      latitude:30.67, longitude:104.06
+    });
+    const planets = {};
+    (chart.planets||[]).forEach(p=>{
+      const mm = (p.formatted||'').match(/([A-Z][a-z]+)$/);
+      if(mm) planets[p.name] = EN_SIGN_MAP[mm[1]] || mm[1];
+    });
+    return planets;
+  }catch(e){ return null; }
+}
+
+function renderHoroscope(userSign){
+  const planets = getCurrentPlanets();
+  if(!planets || !D.HOROSCOPE_PLANET_THEMES) return '';
+
+  const themes = D.HOROSCOPE_PLANET_THEMES;
+  const structure = D.HOROSCOPE_STRUCTURE || [];
+  const opener = D.HOROSCOPE_OPENER || ['今日星象，'];
+
+  // 对每个段落，挑一颗跟用户星座相关的行星来生成
+  let html = '';
+  html += `<div class="horoscope" style="font-size:14px;line-height:2.1">`;
+
+  structure.forEach((sec, idx) => {
+    // 从pool里选一颗行星，优先选落入用户星座的
+    let picked = null, pickedPlanet = null;
+    for(const pn of sec.pool){
+      const t = themes[pn];
+      if(!t) continue;
+      // 检查这颗行星是否落入用户星座
+      const inSign = planets[pn];
+      if(inSign === userSign){
+        picked = t.themes[userSign];
+        pickedPlanet = pn;
+        break;
+      }
+    }
+    // 如果没找到落入的，就用落入的第一个pool行星的文案
+    if(!picked){
+      for(const pn of sec.pool){
+        const t = themes[pn];
+        if(!t) continue;
+        const inSign = planets[pn];
+        if(inSign && t.themes[inSign]){
+          picked = t.themes[inSign];
+          pickedPlanet = pn;
+          break;
+        }
+      }
+    }
+    // 兜底：随机取
+    if(!picked){
+      const t = themes[sec.pool[0]];
+      if(t){
+        const keys = Object.keys(t.themes);
+        picked = t.themes[keys[Math.floor(Math.random()*keys.length)]];
+      }
+    }
+
+    if(picked){
+      const label = sec.para;
+      html += `<div style="margin-bottom:6px"><b>${label}</b>：${picked}</div>`;
+    }
+  });
+
+  // 加一个当前天象速览
+  const majorPlanets = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn'];
+  const transits = majorPlanets.filter(p=>planets[p]).map(p=>{
+    const cn = {Sun:'太阳',Moon:'月亮',Mercury:'水星',Venus:'金星',Mars:'火星',Jupiter:'木星',Saturn:'土星'}[p]||p;
+    return `${cn}在${planets[p]}座`;
+  }).join('，');
+  html += `<div class="mini-detail" style="margin-top:8px;border-top:1px dashed var(--line);padding-top:6px">📍 今日天象：${transits}</div>`;
+  html += `</div>`;
+  return html;
+}
 
 /* ========== 首页 ↔ 正文 切换 ========== */
 function enterApp(){
