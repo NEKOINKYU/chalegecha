@@ -164,8 +164,7 @@ function checkScenario(name, birth) {
 }
 
 // 首页/第二页(main)-无出生信息：直接 render()（enterApp 无存档分支的原语）。
-// 新设计：第二页为纯个人视图（我的今日 / 命盘 / 星盘），无出生信息时只出「我的今日」个人化占位，
-// 不重复首屏通用黄历/吃什么/起卦(起卦仅在首屏 peek 的 checkPeek 场景已覆盖)，不泄露命盘/星盘。
+// 吃/卦已移至正文页 funCards，不在此断言。
 function checkHome(name) {
   const window = loadDom();
   try { window.render(); }
@@ -187,7 +186,7 @@ function checkHome(name) {
   });
 }
 
-// 首屏-无出生信息：验证「首次访问即出今日黄历+今日吃什么+起卦、无需推算」（本次需求核心）
+// 首屏-无出生信息：验证「首次访问即出今日黄历」（吃/卦已移至正文页）
 function checkPeek(name) {
   const window = loadDom();
   try { window.renderHomePeek(); }
@@ -198,20 +197,8 @@ function checkPeek(name) {
       const txt = box ? box.textContent : '';
       if (/加载失败/.test(txt)) errors.push(`[D1/D4] 场景「${name}」首屏三卡渲染失败(降级提示)`);
       if (!/今日黄历/.test(txt)) errors.push(`[marker] 场景「${name}」首屏未渲染今日黄历`);
-      if (!/今天想吃什么/.test(txt)) errors.push(`[marker] 场景「${name}」首屏未渲染今日吃什么`);
-      if (!/起卦/.test(txt)) errors.push(`[marker] 场景「${name}」首屏未渲染起卦`);
       if (/命盘/.test(txt)) errors.push(`[D5] 场景「${name}」首屏无出生信息却出现命盘`);
       if (/星盘/.test(txt)) errors.push(`[D5] 场景「${name}」首屏无出生信息却出现星盘`);
-      try {
-        if (window.rollGua) {
-          // 首屏起卦默认空状态：先验证有入口按钮，点击后才出心意（不再要求加载即出卦）
-          const btn = window.document.getElementById('introRollBtn');
-          if (!btn) errors.push(`[marker] 场景「${name}」首屏起卦入口按钮(introRollBtn)缺失`);
-          window.rollGua('introGuaBox');
-          const gtxt = (window.document.getElementById('introGuaBox')||{}).textContent || '';
-          if (!/意境/.test(gtxt)) errors.push(`[D2/运行时] 场景「${name}」首屏起卦点击后未渲染意境`);
-        }
-      } catch (e) { errors.push(`[D1] 场景「${name}」首屏起卦抛异常: ${e.message}`); }
       res();
     }, 450);
   });
@@ -389,9 +376,9 @@ function checkHardening(){
   checkHardening();
   checkChengGuBaihua();
   await checkChengGuBaihuaRender('称骨白话');
-  // 首屏-无出生信息：验证「首次访问即出今日黄历+今日吃什么+起卦、无需推算」（本次需求核心）
+  // 首屏-无出生信息：验证「首次访问即出今日黄历」（吃/卦已移至正文页）
   await checkPeek('首屏-无出生信息');
-  // 首页-无出生信息：验证「进首页即出今日黄历+今日吃什么+起卦、无需推算」(本次需求核心)
+  // 正文页-无出生信息：验证「进正文即出今日黄历」
   await checkHome('首页-无出生信息');
   // 三场景覆盖：用户生日(双鱼,完整) / 原 bug 星座(巨蟹,完整) / 仅月日
   await checkScenario('双鱼-完整', { y: 2002, m: 2, d: 19, h: 12, gender: 1, lat: 30.57, lng: 104.07, tz: 8 });
