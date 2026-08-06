@@ -526,8 +526,8 @@
 <script src="./lib/celestine.js"></script>
 <script src="./data.js"></script>
 <script>
-// 浏览器从后台缓存恢复时强制刷新（解决手机"关了再开内容不变"）
-window.addEventListener('pageshow',function(e){ if(e.persisted) location.reload(); });
+// 浏览器从后台缓存恢复时强制刷新（解决手机"关了再开内容不变"）—— 延迟300ms避免闪烁
+window.addEventListener('pageshow',function(e){ if(e.persisted) setTimeout(()=>location.reload(), 300); });
 const D = window.DATA;
 const GAN = D.GAN_WUXING, ZHI = D.ZHI_CANG, SHENG = D.SHENG, KE = D.KE, WUXING_TEXT = D.WUXING_TEXT;
 const ELEM_TO_WUXING = {'火':'火','土':'土','风':'木','水':'水'};
@@ -1924,7 +1924,7 @@ function saveBirth(){
       })
       .catch(() => {}); // 网络不通：静默，不影响使用
   }
-  setTimeout(() => { checkUpdate(); setInterval(checkUpdate, 600000); }, 120000);
+  setTimeout(() => { try{checkUpdate()}catch(e){}; setInterval(()=>{try{checkUpdate()}catch(e){}}, 600000); }, 5000);
 })();
 
 /* ========== 首页 ↔ 正文 切换 ========== */
