@@ -1116,8 +1116,7 @@ function render(){
   let horoscopeHtml = '';
   if(canChart && typeof Celestine !== 'undefined'){
     try{
-      const userName = sign; // 用户的太阳星座（来自出生日期）
-      horoscopeHtml = renderHoroscope(userName);
+      horoscopeHtml = renderHoroscope(userSign);
     }catch(e){}
   } else if(typeof Celestine === 'undefined'){
     // 没加载celestine就降级
@@ -1251,13 +1250,7 @@ function render(){
     `:`<div class="mini-detail">填出生月日（无需年份）即可看你的星座今日指引。${birthInfoText}</div>`}
   </div>
 
-  <!-- 星盘 -->
-  <div class="card">
-    <h2>🌟 星盘（celestine 引擎）${canChart?'· '+y+'-'+m+'-'+d:''}</h2>
-    ${astroHtml || `<div class="mini-detail">还差出生信息，暂时排不出完整星盘。${birthInfoText}　完整星盘需：出生年 / 月 / 日 / 时 + 出生地经纬度。</div>`}
-  </div>
-
-  <!-- 星座日运 -->
+  <!-- 星座运势 -->
   ${horoscopeHtml?`<div class="card" style="border-left:3px solid var(--accent)"><h2>🔮 ${userSign}座 · 星座运势</h2>
     <div style="display:flex;gap:6px;margin-bottom:12px">
       <button class="tab-btn small active" data-hs="day" onclick="switchHoroscopePeriod('day','${userSign}')">日运</button>
@@ -1268,6 +1261,12 @@ function render(){
     ${horoscopeHtml}
     <div id="hsExtra"></div>
   </div>`:''}
+
+  <!-- 星盘 -->
+  <div class="card">
+    <h2>🌟 星盘（celestine 引擎）${canChart?'· '+y+'-'+m+'-'+d:''}</h2>
+    ${astroHtml || `<div class="mini-detail">还差出生信息，暂时排不出完整星盘。${birthInfoText}　完整星盘需：出生年 / 月 / 日 / 时 + 出生地经纬度。</div>`}
+  </div>
   </div>
   `:''}
 
