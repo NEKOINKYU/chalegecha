@@ -324,6 +324,7 @@
   .tab-btn{flex:1;min-width:74px;white-space:nowrap;border:none;background:transparent;color:var(--sub);font-size:13.5px;font-weight:600;padding:9px 10px;border-radius:999px;cursor:pointer;transition:all .24s var(--ease)}
   .tab-btn:hover{color:var(--ink);background:var(--surface-2)}
   .tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--accent-ink);box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 34%,transparent)}
+  .tab-btn.small{flex:none;font-size:12px;padding:5px 12px;min-width:auto}
   .tab-panel{display:none}
   .tab-panel.active{display:block}
 
@@ -1257,7 +1258,16 @@ function render(){
   </div>
 
   <!-- 星座日运 -->
-  ${horoscopeHtml?`<div class="card" style="border-left:3px solid var(--accent)"><h2>🔮 ${userSign}座 · 今日运势</h2>${horoscopeHtml}</div>`:''}
+  ${horoscopeHtml?`<div class="card" style="border-left:3px solid var(--accent)"><h2>🔮 ${userSign}座 · 星座运势</h2>
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <button class="tab-btn small active" data-hs="day" onclick="switchHoroscopePeriod('day','${userSign}')">日运</button>
+      <button class="tab-btn small" data-hs="week" onclick="switchHoroscopePeriod('week','${userSign}')">周运</button>
+      <button class="tab-btn small" data-hs="month" onclick="switchHoroscopePeriod('month','${userSign}')">月运</button>
+      <button class="tab-btn small" data-hs="year" onclick="switchHoroscopePeriod('year','${userSign}')">年运</button>
+    </div>
+    ${horoscopeHtml}
+    <div id="hsExtra"></div>
+  </div>`:''}
   </div>
   `:''}
 
@@ -2049,6 +2059,36 @@ function renderHoroscope(userSign){
   html += `<div class="mini-detail" style="margin-top:8px;border-top:1px dashed var(--line);padding-top:6px">📍 今日天象：${transits}</div>`;
   html += `</div>`;
   return html;
+}
+
+/* 切换运势时间尺度 */
+function switchHoroscopePeriod(period, sign){
+  // 更新按钮状态
+  document.querySelectorAll('[data-hs]').forEach(b=>b.classList.toggle('active', b.dataset.hs===period));
+  const extra = document.getElementById('hsExtra');
+  if(!extra) return;
+
+  const dataMap = {
+    week: D.HOROSCOPE_WEEKLY,
+    month: D.HOROSCOPE_MONTHLY,
+    year: D.HOROSCOPE_YEARLY
+  };
+  const labels = {week:'周运', month:'月运', year:'年运'};
+  const pool = dataMap[period];
+  if(!pool || !pool[sign]) return;
+
+  // 日运已经在主区域渲染了，切换回日运就清空extra
+  if(period === 'day'){ extra.innerHTML=''; return; }
+
+  const d = pool[sign];
+  let html = '<div class="horoscope" style="font-size:14px;line-height:2.1;margin-top:8px;border-top:1px dashed var(--line);padding-top:10px">';
+  if(d.overview) html += `<div style="margin-bottom:8px"><b>📌 概览</b>：${d.overview}</div>`;
+  if(d.love) html += `<div style="margin-bottom:6px"><b>💕 感情</b>：${d.love}</div>`;
+  if(d.work) html += `<div style="margin-bottom:6px"><b>💼 工作/学业</b>：${d.work}</div>`;
+  if(d.money) html += `<div style="margin-bottom:6px"><b>💰 财运</b>：${d.money}</div>`;
+  if(d.tip) html += `<div class="mini-detail" style="margin-top:6px;padding-top:6px">💡 ${d.tip}</div>`;
+  html += '</div>';
+  extra.innerHTML = html;
 }
 
 /* ========== 首页 ↔ 正文 切换 ========== */
