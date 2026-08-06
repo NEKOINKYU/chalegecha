@@ -1607,7 +1607,7 @@ function renderHomePeek(){
   }
 }
 
-/* 正文页：今天想吃什么 + 起一卦（从首页移过来） */
+/* 正文页：今天想吃什么 + 随机音乐（并排）+ 起一卦（下方单独行） */
 function renderFunCards(){
   const box = document.getElementById('funCards');
   if(!box) return;
@@ -1615,8 +1615,11 @@ function renderFunCards(){
   const foodPool = (D.FOOD_BY_WX && D.FOOD_BY_WX[foodWX] && D.FOOD_BY_WX[foodWX].length) ? D.FOOD_BY_WX[foodWX] : (D.FOODS||['随便吃点']);
   const todayFood = foodPool[Math.floor(Math.random()*foodPool.length)];
   const foodTip = (D.FOOD_WX_TIP && D.FOOD_WX_TIP[foodWX]) ? `（今日五行喜【${foodWX}】——${D.FOOD_WX_TIP[foodWX]}）` : '';
+  const musicPool = (D.MUSIC_BY_WX && D.MUSIC_BY_WX[foodWX] && D.MUSIC_BY_WX[foodWX].length) ? D.MUSIC_BY_WX[foodWX] : (D.MUSIC_BY_WX&&D.MUSIC_BY_WX.default||['随心听']);
+  const todayMusic = musicPool[Math.floor(Math.random()*musicPool.length)];
+  const musicTip = (D.MUSIC_WX_TIP && D.MUSIC_WX_TIP[foodWX]) ? `（${D.MUSIC_WX_TIP[foodWX]}）` : '';
   box.innerHTML = deEmoji(`
-    <div class="cards-row" style="display:flex;gap:12px;flex-wrap:wrap">
+    <div class="cards-row" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
       <div class="card" style="flex:1;min-width:200px;border-left:3px solid var(--accent)">
         <h2>🍜 今天想吃什么</h2>
         <div class="plain-text" id="funFoodBox" style="font-size:18px;text-align:center;padding:10px;font-weight:600;color:var(--ink)">${todayFood}</div>
@@ -1624,16 +1627,31 @@ function renderFunCards(){
         <div style="text-align:center;margin-top:8px"><button class="btn btn-ghost" onclick="rerollFood('funFoodBox')" style="font-size:12px">🎲 换一个</button></div>
       </div>
       <div class="card" style="flex:1;min-width:200px">
-        <h2>📿 起一卦</h2>
-        <p class="mini-detail">随机起卦，看<b>意境</b>与<b>属性</b>，给爱情/事业/寻物一句小提示（纯娱乐，别较真）。</p>
-        <div style="text-align:center;margin:6px 0">
-          <button class="btn" id="funRollBtn" onclick="rollGua('funGuaBox')" style="font-size:13px">🎲 起一卦</button>
-        </div>
-        <div id="funGuaBox" class="gua-empty" style="text-align:center;font-size:13px;color:var(--sub)">点上方按钮，起一卦看看今日玄机 ☯</div>
+        <h2>🎵 今天听什么</h2>
+        <div class="plain-text" id="funMusicBox" style="font-size:16px;text-align:center;padding:10px;font-weight:600;color:var(--ink);line-height:1.8">${todayMusic}</div>
+        <div class="mini-detail" style="text-align:center;margin-top:2px">${musicTip}</div>
+        <div style="text-align:center;margin-top:8px"><button class="btn btn-ghost" onclick="rerollMusic('funMusicBox')" style="font-size:12px">🎲 换一个</button></div>
       </div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--wx-${foodWX})">
+      <h2>📿 起一卦</h2>
+      <p class="mini-detail">随机起卦，看<b>意境</b>与<b>属性</b>，给爱情/事业/寻物一句小提示（纯娱乐，别较真）。</p>
+      <div style="text-align:center;margin:6px 0">
+        <button class="btn" id="funRollBtn" onclick="rollGua('funGuaBox')" style="font-size:13px">🎲 起一卦</button>
+      </div>
+      <div id="funGuaBox" class="gua-empty" style="text-align:center;font-size:13px;color:var(--sub)">点上方按钮，起一卦看看今日玄机 ☯</div>
     </div>
   `);
   box.style.display = '';
+}
+
+/* 换一首音乐推荐 */
+function rerollMusic(boxId){
+  const box = document.getElementById(boxId);
+  if(!box) return;
+  const wx = curFoodWX || '火';
+  const pool = (D.MUSIC_BY_WX && D.MUSIC_BY_WX[wx] && D.MUSIC_BY_WX[wx].length) ? D.MUSIC_BY_WX[wx] : (D.MUSIC_BY_WX&&D.MUSIC_BY_WX.default||['随心听']);
+  box.textContent = pool[Math.floor(Math.random()*pool.length)];
 }
 
 /* ============ 推算触发：填信息 → 点按钮才算 ============ */
