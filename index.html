@@ -414,6 +414,14 @@
   .update-banner .ic{width:16px;height:16px;margin:0;color:var(--accent)}
   .update-banner a{color:var(--accent);font-weight:700;text-decoration:none;cursor:pointer;margin-left:2px}
   .update-banner a:hover{text-decoration:underline}
+  /* 分享区块 */
+  .share-block{margin:16px auto 0;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;max-width:420px;box-shadow:var(--shadow)}
+  .share-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:10px}
+  .share-row{display:flex;gap:8px;justify-content:center;margin-bottom:8px}
+  .share-url{font-size:11px;color:var(--sub);word-break:break-all;margin-bottom:6px}
+  .qr-wrap{margin-top:10px}
+  .qr-save-hint{font-size:11px;color:var(--sub);margin-top:6px}
+  .share-copied{font-size:13px;color:var(--good);font-weight:600;margin-top:6px}
   /* 给 sticky topbar + tabs 留出空间，防止滚动定位到 tab 面板时内容被遮挡 */
   #app{scroll-margin-top:110px}
   .tab-panel{scroll-margin-top:110px}
@@ -434,6 +442,20 @@
     <p class="hero-tag">八字用神 × 星盘 × 黄历 × 周易，每天给你一点刚刚好的小指引。</p>
     <p class="hero-enter-hint">👆 点击「查了个查」进入下一页</p>
     <div id="introCards"></div>
+    <!-- 分享区块 -->
+    <div class="share-block" id="shareBlock">
+      <div class="share-title">📤 分享给朋友</div>
+      <div class="share-row">
+        <button class="btn btn-ghost" id="copyBtn" onclick="copyShareUrl()" style="font-size:13px">📋 复制链接</button>
+        <button class="btn btn-ghost" id="qrBtn" onclick="toggleQR()" style="font-size:13px">📱 二维码</button>
+      </div>
+      <div class="share-url" id="shareUrl">https://chalegecha.pages.dev</div>
+      <div class="qr-wrap hidden" id="qrWrap">
+        <img id="qrImg" src="" alt="二维码" style="width:180px;height:180px;border-radius:12px">
+        <div class="qr-save-hint">长按二维码保存到相册</div>
+      </div>
+      <div class="share-copied hidden" id="shareCopied">✅ 链接已复制</div>
+    </div>
     <p class="hero-hint hero-hint-foot">内容由算法生成，仅供消遣参考，不构成专业建议。出生信息仅保存在你的浏览器本地，不会上传。<span class="ver-chip" id="ver2"></span></p>
   </div>
 </section>
@@ -1975,6 +1997,35 @@ function enterIntro(){
   if(main){ main.classList.add('hidden'); main.setAttribute('aria-hidden','true'); }
   if(intro){ intro.style.display='flex'; void intro.offsetWidth; intro.classList.remove('hide'); }
   window.scrollTo({top:0,behavior:'auto'});
+}
+
+/* ========== 分享功能 ========== */
+const SHARE_URL = 'https://chalegecha.pages.dev';
+// 页面加载时预加载二维码图片
+(function(){
+  const img = document.getElementById('qrImg');
+  if(img) img.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(SHARE_URL)}`;
+})();
+
+function copyShareUrl(){
+  const el = document.getElementById('shareCopied');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(SHARE_URL).then(()=>{
+      if(el){ el.classList.remove('hidden'); setTimeout(()=>el.classList.add('hidden'), 2000); }
+    }).catch(()=>{ fallbackCopy(); });
+  } else { fallbackCopy(); }
+}
+function fallbackCopy(){
+  const ta = document.createElement('textarea');
+  ta.value = SHARE_URL; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); const el=document.getElementById('shareCopied'); if(el){el.classList.remove('hidden');setTimeout(()=>el.classList.add('hidden'),2000);} }catch(e){}
+  document.body.removeChild(ta);
+}
+function toggleQR(){
+  const wrap = document.getElementById('qrWrap');
+  if(!wrap) return;
+  wrap.classList.toggle('hidden');
 }
 </script>
 
