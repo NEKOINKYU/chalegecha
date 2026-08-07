@@ -1509,11 +1509,18 @@ function renderHoroscope(userSign){
 }
 
 /* 切换运势时间尺度 */
+let currentHsPeriod = null;
 function switchHoroscopePeriod(period, sign){
-  // 更新按钮状态
-  document.querySelectorAll('[data-hs]').forEach(b=>b.classList.toggle('active', b.dataset.hs===period));
   const extra = document.getElementById('hsExtra');
   if(!extra) return;
+
+  // 点击已激活的标签 → 收起 extra（toggle），回到只看今日运
+  if(currentHsPeriod === period){
+    currentHsPeriod = null;
+    document.querySelectorAll('[data-hs]').forEach(b=>b.classList.remove('active'));
+    extra.innerHTML = '';
+    return;
+  }
 
   const dataMap = {
     week: D.HOROSCOPE_WEEKLY,
@@ -1523,6 +1530,8 @@ function switchHoroscopePeriod(period, sign){
   const pool = dataMap[period];
   if(!pool || !pool[sign]) return;
 
+  currentHsPeriod = period;
+  document.querySelectorAll('[data-hs]').forEach(b=>b.classList.toggle('active', b.dataset.hs===period));
   const d = pool[sign];
   let html = '<div class="horoscope" style="font-size:14px;line-height:2.1;margin-top:8px;border-top:1px dashed var(--line);padding-top:10px">';
   if(d.overview) html += `<div style="margin-bottom:8px"><b>📌 概览</b>：${d.overview}</div>`;
