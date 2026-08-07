@@ -702,7 +702,6 @@ function render(){
   <!-- 星座运势 -->
   ${horoscopeHtml?`<div class="card" style="border-left:3px solid var(--accent)"><h2>🔮 ${userSign}座 · 星座运势</h2>
     <div style="display:flex;gap:6px;margin-bottom:12px">
-      <button class="tab-btn small active" data-hs="day" onclick="switchHoroscopePeriod('day','${userSign}')">日运</button>
       <button class="tab-btn small" data-hs="week" onclick="switchHoroscopePeriod('week','${userSign}')">周运</button>
       <button class="tab-btn small" data-hs="month" onclick="switchHoroscopePeriod('month','${userSign}')">月运</button>
       <button class="tab-btn small" data-hs="year" onclick="switchHoroscopePeriod('year','${userSign}')">年运</button>
@@ -1521,12 +1520,8 @@ function switchHoroscopePeriod(period, sign){
     month: D.HOROSCOPE_MONTHLY,
     year: D.HOROSCOPE_YEARLY
   };
-  const labels = {week:'周运', month:'月运', year:'年运'};
   const pool = dataMap[period];
   if(!pool || !pool[sign]) return;
-
-  // 日运已经在主区域渲染了，切换回日运就清空extra
-  if(period === 'day'){ extra.innerHTML=''; return; }
 
   const d = pool[sign];
   let html = '<div class="horoscope" style="font-size:14px;line-height:2.1;margin-top:8px;border-top:1px dashed var(--line);padding-top:10px">';
