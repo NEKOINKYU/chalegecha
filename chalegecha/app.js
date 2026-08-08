@@ -1541,6 +1541,8 @@ function switchHoroscopePeriod(period, sign){
   if(d.tip) html += `<div class="mini-detail" style="margin-top:6px;padding-top:6px">💡 ${d.tip}</div>`;
   html += '</div>';
   extra.innerHTML = html;
+  // 与星盘/Tab 一致的淡入，消除「瞬切」的生硬感（复用现有 .fade-in / fadeUp）
+  extra.classList.remove('fade-in'); void extra.offsetWidth; extra.classList.add('fade-in');
 }
 
 /* ========== 首页 ↔ 正文 切换 ========== */
