@@ -809,21 +809,48 @@ function showWordTip(e, arg){
   div.className = 'yw-detail';
   div.innerHTML = '<b>' + escHtml(w) + '</b> ' + (d || '这个词有点冷门，按字面理解差不多就行～');
   div.onclick = function(ev){ ev.stopPropagation(); closeWordDetail(el); };
-  // 标签内的词（值神/纳音/冲/喜神/六曜等）展开到整行，不挤在同一条 flex 里
-  var parent = el.parentElement;
-  if(parent && parent.classList.contains('tag')){ parent.after(div); el._ywParent = parent; }
-  else { el.after(div); }
+
+  // 手机端：改为底部弹层，避免内联展开把整页往下推
+  var isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width:640px)').matches;
+  if(isMobile){
+    var bd = document.createElement('div');
+    bd.className = 'yw-backdrop';
+    bd.onclick = function(){ closeWordDetail(el); };
+    document.body.appendChild(bd);
+    document.body.appendChild(div);
+    el._ywSheet = div;
+    el._ywBackdrop = bd;
+    var slideIn = function(){ div.classList.add('show'); };
+    if(window.requestAnimationFrame) window.requestAnimationFrame(slideIn); else slideIn();
+  } else {
+    // 桌面端：内联展开（标签内的词展开到整行，不挤在同一条 flex 里）
+    var parent = el.parentElement;
+    if(parent && parent.classList.contains('tag')){ parent.after(div); el._ywParent = parent; }
+    else { el.after(div); }
+  }
   el.classList.add('yw-open');
   var onScroll = function(){ if(el.classList.contains('yw-open')) closeWordDetail(el); };
   window.addEventListener('scroll', onScroll, {passive:true, once:true});
 }
 function closeWordDetail(el){
   if(!el) return;
-  var parent = el._ywParent || el;
-  var nxt = parent.nextElementSibling;
-  if(nxt && nxt.classList.contains('yw-detail')) nxt.remove();
+  // 手机端底部弹层：从 body 移除（先下滑再移除，配合过渡动画）
+  if(el._ywSheet){
+    var sheet = el._ywSheet;
+    if(el._ywBackdrop && el._ywBackdrop.parentNode) el._ywBackdrop.remove();
+    sheet.classList.remove('show');
+    var s = sheet;
+    setTimeout(function(){ if(s.parentNode) s.remove(); }, 220);
+    el._ywSheet = null;
+    el._ywBackdrop = null;
+  } else {
+    // 桌面端：移除内联展开块
+    var parent = el._ywParent || el;
+    var nxt = parent.nextElementSibling;
+    if(nxt && nxt.classList.contains('yw-detail')) nxt.remove();
+    el._ywParent = null;
+  }
   el.classList.remove('yw-open');
-  el._ywParent = null;
 }
 
 /* ================= 袁天罡称骨 ================= */

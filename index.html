@@ -214,6 +214,21 @@
   .astro-tri{font-size:13px;color:var(--ink-2);line-height:2.1;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-bottom:8px}
   .astro-tri b{color:var(--accent)}
   @media(max-width:640px){.fusion-grid{grid-template-columns:1fr}.fusion-side{position:static}}
+  /* 手机/小平板：词义解释改为底部弹层，避免内联展开把整页往下推 */
+  @media(max-width:640px){
+    .yw-detail{
+      position:fixed;left:0;right:0;bottom:0;top:auto;margin:0;
+      border-radius:18px 18px 0 0;border-left:1px solid var(--line);
+      max-height:56vh;overflow-y:auto;z-index:106;
+      padding:16px 18px calc(18px + env(safe-area-inset-bottom,0px));
+      box-shadow:0 -8px 40px rgba(0,0,0,.25);
+      transform:translateY(100%);transition:transform .26s var(--ease);animation:none;
+    }
+    .yw-detail.show{transform:none}
+    .yw-backdrop{position:fixed;inset:0;z-index:105;background:rgba(0,0,0,.4);animation:fadeIn .2s ease both}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .yw-detail b{display:block;font-size:15px;margin-bottom:6px}
+  }
   @media(max-width:600px){.grid2,.dims{grid-template-columns:1fr}}
   /* ============ 手机适配（< 480px） ============ */
   @media(max-width:480px){
