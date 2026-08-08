@@ -216,6 +216,8 @@
   @media(max-width:640px){.fusion-grid{grid-template-columns:1fr}.fusion-side{position:static}}
   /* 手机/小平板：词义解释改为底部弹层，避免内联展开把整页往下推 */
   @media(max-width:640px){
+    /* 全局触摸优化：去除点击 300ms 延迟、去掉点击高亮块 */
+    html{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
     .yw-detail{
       position:fixed;left:0;right:0;bottom:0;top:auto;margin:0;
       border-radius:18px 18px 0 0;border-left:1px solid var(--line);
@@ -228,6 +230,13 @@
     .yw-backdrop{position:fixed;inset:0;z-index:105;background:rgba(0,0,0,.4);animation:fadeIn .2s ease both}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     .yw-detail b{display:block;font-size:15px;margin-bottom:6px}
+  }
+  /* 平板 / 横屏手机（641–900px）：布局补强，避免大屏出现尴尬留白或过窄列 */
+  @media(min-width:641px) and (max-width:900px){
+    .fusion-grid{grid-template-columns:1fr 180px}
+    .fusion-side{position:static}
+    :root{--maxw:760px}
+    .hero-title{font-size:clamp(56px,9vw,92px)}
   }
   @media(max-width:600px){.grid2,.dims{grid-template-columns:1fr}}
   /* ============ 手机适配（< 480px） ============ */
@@ -264,7 +273,7 @@
     /* 宜忌双栏 */
     .yi-ji{flex-direction:column}
     /* Tab：允许横向滚动，字号稍小 */
-    .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;justify-content:flex-start}
+    .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;justify-content:flex-start;top:calc(env(safe-area-inset-top,0px) + 52px)}
     .tab-btn{font-size:12.5px;padding:8px;min-width:64px;flex:none}
     /* 卡片内边距缩减 */
     .card{padding:14px}
@@ -334,7 +343,7 @@
   .th-more{margin-top:14px;width:100%}
 
   /* ============ Tab 导航 ============ */
-  .tabs{position:sticky;top:64px;z-index:5;display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px;margin:4px 0 18px;box-shadow:var(--shadow);overflow-x:auto}
+  .tabs{position:sticky;top:calc(env(safe-area-inset-top,0px) + 58px);z-index:5;display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px;margin:4px 0 18px;box-shadow:var(--shadow);overflow-x:auto}
   .rerun-bar{text-align:center;margin:18px 0 14px}
   .tab-btn{flex:1;min-width:74px;white-space:nowrap;border:none;background:transparent;color:var(--sub);font-size:13.5px;font-weight:600;padding:9px 10px;border-radius:999px;cursor:pointer;transition:all .24s var(--ease)}
   .tab-btn:hover{color:var(--ink);background:var(--surface-2)}
@@ -342,6 +351,9 @@
   .tab-btn.small{flex:none;font-size:12px;padding:5px 12px;min-width:auto}
   .tab-panel{display:none}
   .tab-panel.active{display:block}
+  /* 周/月/年运势容器：打开已淡入，收起也做对称淡出 */
+  #hsExtra{transition:opacity .22s var(--ease), transform .22s var(--ease)}
+  #hsExtra.hs-fade-out{opacity:0;transform:translateY(8px)}
 
   /* ============ 首页 / Hero 入口 ============ */
   .hidden{display:none!important}
@@ -349,7 +361,8 @@
     background:radial-gradient(125% 120% at 50% 18%, var(--card) 0%, var(--bg) 62%);
     overflow-y:auto;transition:opacity .5s var(--ease), transform .5s var(--ease);padding:calc(env(safe-area-inset-top,0px) + 20px) 18px 32px}
   .intro.hide{opacity:0;transform:scale(1.03);pointer-events:none}
-  .intro-inner{position:relative;z-index:2;padding:0 24px;max-width:560px;width:100%}
+  .intro-inner{position:relative;z-index:2;padding:0 24px;max-width:560px;width:100%;animation:introIn .55s var(--ease) both}
+  @keyframes introIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
   /* 首屏三卡容器：左对齐（卡片内有宜忌/列表，居中会乱），占满 560 */
   #introCards{text-align:left;width:100%;margin-top:14px}
   #introCards .card{padding:16px;margin-bottom:12px}

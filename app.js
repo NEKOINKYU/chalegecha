@@ -1541,11 +1541,20 @@ function switchHoroscopePeriod(period, sign){
   const extra = document.getElementById('hsExtra');
   if(!extra) return;
 
-  // 点击已激活的标签 → 收起 extra（toggle），回到只看今日运
+  // 点击已激活的标签 → 收起 extra（toggle），回到只看今日运（带淡出，与打开对称）
   if(currentHsPeriod === period){
     currentHsPeriod = null;
     document.querySelectorAll('[data-hs]').forEach(b=>b.classList.remove('active'));
-    extra.innerHTML = '';
+    extra.classList.add('hs-fade-out');
+    let cleared = false;
+    const clear = function(){
+      if(cleared) return; cleared = true;
+      extra.innerHTML = '';
+      extra.classList.remove('hs-fade-out','fade-in');
+      extra.removeEventListener('transitionend', clear);
+    };
+    extra.addEventListener('transitionend', clear);
+    setTimeout(clear, 320); // 兜底：reduced-motion 等 transition 不触发时立即清理
     return;
   }
 
